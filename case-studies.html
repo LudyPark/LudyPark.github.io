@@ -17,7 +17,7 @@
     <header class="hero">
       <p class="eyebrow">PRODUCTION NOTES</p>
       <h1>Backend work, with the hard parts included.</h1>
-      <p class="lede">These notes describe generalized production experience in payment processing, device messaging, and backend operations. They focus on boundaries, failure cases, and trade-offs—not on a polished happy path. Employer names, internal identifiers, source code, customer data, and non-public metrics are intentionally excluded.</p>
+      <p class="lede">These notes describe generalized production experience in mobility and connected-device systems, backend operations, and payment workflows. They focus on boundaries, failure cases, and trade-offs—not on a polished happy path. Employer names, internal identifiers, source code, customer data, and non-public metrics are intentionally excluded.</p>
     </header>
 
     <section class="legend" aria-label="Claim legend">
@@ -25,23 +25,8 @@
       <div><strong>DESIGN DIRECTION</strong>A proposed improvement, labelled separately from shipped behaviour.</div>
     </section>
 
-    <article class="case" id="payments">
-      <header class="case-head"><p class="number">01</p><div><p class="label">PAYMENTS · STATE &amp; RECOVERY</p><h2>Payment state must survive an unclear provider response.</h2><p class="summary">The payment flows I worked on involved multiple payment methods and asynchronous provider outcomes. The important choice was to make the payment lifecycle explicit, rather than assuming a synchronous response tells the whole story.</p></div></header>
-      <div class="content">
-        <div class="flow" aria-label="Payment paths converge on one guarded transition"><div class="flow-step"><strong>CLIENT</strong>Request or retry</div><span class="arrow">→</span><div class="flow-step"><strong>PROVIDER</strong>Response may be delayed or lost</div><span class="arrow">→</span><div class="flow-step"><strong>PAYMENT STATE</strong>One guarded transition</div><span class="arrow">←</span><div class="flow-step"><strong>ASYNC PATHS</strong>Callback or inquiry</div></div>
-        <div class="grid">
-          <section class="panel"><h3>Implemented / investigated</h3><ul><li>Used explicit intermediate and terminal states instead of interpreting a client timeout as a failed payment.</li><li>Handled repeat requests idempotently around payment changes.</li><li>Processed asynchronous callbacks and used a later inquiry path for unresolved provider outcomes.</li><li>Supported a regional rollout of tipping payments.</li></ul></section>
-          <section class="panel"><h3>Ownership boundary</h3><p>The customer-facing business change and the provider transaction are related, but not the same record of truth. I keep a stable external reference and apply callback or inquiry results through controlled internal transitions.</p></section>
-          <section class="panel wide"><h3>Failure cases the flow has to answer</h3><table class="table"><tbody><tr><th>Same request again</th><td>A repeated client submission is matched to the logical operation. It should return or continue the existing work, not start a second provider operation.</td></tr><tr><th>Provider completed; caller timed out</th><td>The caller stopping its wait does not establish provider failure. Keep the operation unresolved until an inquiry or callback supplies a definitive outcome.</td></tr><tr><th>Callback arrives twice or late</th><td>Use the stable provider reference and make terminal transitions idempotent. A replay must not capture twice or move a completed payment backward.</td></tr><tr><th>Work cannot be processed now</th><td>Retry, DLQ, and idempotency are separate tools: delivery retry, isolation for manual/controlled handling, and safety under repeated processing.</td></tr></tbody></table></section>
-          <section class="panel accent wide"><h3>Design direction: no-row concurrency</h3><p>A row lock cannot protect a payment-change record before it exists. For a redesigned concurrent change flow, I would claim a short-lived state on an existing aggregate record, commit that decision, and call the provider outside the database transaction. This is a design proposal, not a claim about an already-shipped path.</p></section>
-          <section class="panel wide"><h3>Review questions I would expect</h3><ul class="questions"><li>Which source is authoritative when the provider may have completed after the local timeout?</li><li>What is the concurrency anchor before a new payment record exists?</li><li>Why must a remote provider call not hold a database transaction open?</li><li>What prevents a late callback from changing a completed state?</li></ul></section>
-        </div>
-      </div>
-      <p class="resource"><strong>Supporting example:</strong> a small independent Kotlin reference demonstrates idempotent request handling and query-based recovery. It is not presented as production source code. <a href="https://github.com/LudyPark/payment-reconciliation-lab">View repository →</a></p>
-    </article>
-
     <article class="case" id="mobility">
-      <header class="case-head"><p class="number">02</p><div><p class="label">MESSAGING · MQTT · CONNECTION OWNERSHIP</p><h2>A broker can distribute work. It cannot own a socket for you.</h2><p class="summary">In connected-device and mobility systems, inbound events can scale through a broker while outbound commands still have to reach the process holding a live connection. Treating those paths as the same problem creates hard-to-debug delivery failures.</p></div></header>
+      <header class="case-head"><p class="number">01</p><div><p class="label">MESSAGING · MQTT · CONNECTION OWNERSHIP</p><h2>A broker can distribute work. It cannot own a socket for you.</h2><p class="summary">In connected-device and mobility systems, inbound events can scale through a broker while outbound commands still have to reach the process holding a live connection. Treating those paths as the same problem creates hard-to-debug delivery failures.</p></div></header>
       <div class="content">
         <div class="flow" aria-label="Incoming and outgoing message paths"><div class="flow-step"><strong>INBOUND</strong>Device event → broker → domain consumer</div><span class="arrow">↔</span><div class="flow-step"><strong>OWNER</strong>One service instance holds the live connection</div><span class="arrow">↔</span><div class="flow-step"><strong>OUTBOUND</strong>Command → owner resolution → device</div></div>
         <div class="grid">
@@ -55,7 +40,7 @@
     </article>
 
     <article class="case" id="reliability">
-      <header class="case-head"><p class="number">03</p><div><p class="label">PRODUCTION RELIABILITY · DIAGNOSIS</p><h2>Use each piece of evidence for the question it can actually answer.</h2><p class="summary">I have investigated production symptoms and recurring cloud usage by first narrowing the hypothesis. The goal is not to collect more logs; it is to distinguish active work, retained memory, transaction contention, and external dependency behaviour before changing code.</p></div></header>
+      <header class="case-head"><p class="number">02</p><div><p class="label">PRODUCTION RELIABILITY · DIAGNOSIS</p><h2>Use each piece of evidence for the question it can actually answer.</h2><p class="summary">I have investigated production symptoms and recurring cloud usage by first narrowing the hypothesis. The goal is not to collect more logs; it is to distinguish active work, retained memory, transaction contention, and external dependency behaviour before changing code.</p></div></header>
       <div class="content">
         <div class="grid">
           <section class="panel"><h3>Implemented / investigated</h3><ul><li>Investigated backend reliability symptoms with runtime and application evidence.</li><li>Examined transaction boundaries around slow external dependencies.</li><li>Reduced recurring cloud API usage after tracing request origin and volume.</li><li>Led framework upgrades across production services.</li></ul></section>
@@ -65,6 +50,21 @@
           <section class="panel wide"><h3>Review questions I would expect</h3><ul class="questions"><li>What observation distinguishes high allocation from retained-memory growth?</li><li>Why is a RUNNABLE thread not enough evidence for a CPU conclusion?</li><li>Which transaction boundary is necessary, and which one merely holds resources during a remote wait?</li><li>How do you prove a cost optimisation continues to work after the first deployment?</li></ul></section>
         </div>
       </div>
+    </article>
+
+    <article class="case" id="payments">
+      <header class="case-head"><p class="number">03</p><div><p class="label">PAYMENTS · STATE &amp; RECOVERY</p><h2>Payment state must survive an unclear provider response.</h2><p class="summary">The payment flows I worked on involved multiple payment methods and asynchronous provider outcomes. The important choice was to make the payment lifecycle explicit, rather than assuming a synchronous response tells the whole story.</p></div></header>
+      <div class="content">
+        <div class="flow" aria-label="Payment paths converge on one guarded transition"><div class="flow-step"><strong>CLIENT</strong>Request or retry</div><span class="arrow">→</span><div class="flow-step"><strong>PROVIDER</strong>Response may be delayed or lost</div><span class="arrow">→</span><div class="flow-step"><strong>PAYMENT STATE</strong>One guarded transition</div><span class="arrow">←</span><div class="flow-step"><strong>ASYNC PATHS</strong>Callback or inquiry</div></div>
+        <div class="grid">
+          <section class="panel"><h3>Implemented / investigated</h3><ul><li>Used explicit intermediate and terminal states instead of interpreting a client timeout as a failed payment.</li><li>Handled repeat requests idempotently around payment changes.</li><li>Processed asynchronous callbacks and used a later inquiry path for unresolved provider outcomes.</li><li>Supported a regional rollout of tipping payments.</li></ul></section>
+          <section class="panel"><h3>Ownership boundary</h3><p>The customer-facing business change and the provider transaction are related, but not the same record of truth. I keep a stable external reference and apply callback or inquiry results through controlled internal transitions.</p></section>
+          <section class="panel wide"><h3>Failure cases the flow has to answer</h3><table class="table"><tbody><tr><th>Same request again</th><td>A repeated client submission is matched to the logical operation. It should return or continue the existing work, not start a second provider operation.</td></tr><tr><th>Provider completed; caller timed out</th><td>The caller stopping its wait does not establish provider failure. Keep the operation unresolved until an inquiry or callback supplies a definitive outcome.</td></tr><tr><th>Callback arrives twice or late</th><td>Use the stable provider reference and make terminal transitions idempotent. A replay must not capture twice or move a completed payment backward.</td></tr><tr><th>Work cannot be processed now</th><td>Retry, DLQ, and idempotency are separate tools: delivery retry, isolation for manual/controlled handling, and safety under repeated processing.</td></tr></tbody></table></section>
+          <section class="panel accent wide"><h3>Design direction: no-row concurrency</h3><p>A row lock cannot protect a payment-change record before it exists. For a redesigned concurrent change flow, I would claim a short-lived state on an existing aggregate record, commit that decision, and call the provider outside the database transaction. This is a design proposal, not a claim about an already-shipped path.</p></section>
+          <section class="panel wide"><h3>Review questions I would expect</h3><ul class="questions"><li>Which source is authoritative when the provider may have completed after the local timeout?</li><li>What is the concurrency anchor before a new payment record exists?</li><li>Why must a remote provider call not hold a database transaction open?</li><li>What prevents a late callback from changing a completed state?</li></ul></section>
+        </div>
+      </div>
+      <p class="resource"><strong>Supporting example:</strong> a small independent Kotlin reference demonstrates idempotent request handling and query-based recovery. It is not presented as production source code. <a href="https://github.com/LudyPark/payment-reconciliation-lab">View repository →</a></p>
     </article>
 
     <section class="closing"><h2>What I would want a reviewer to see.</h2><p>I am comfortable with implementation details, but I also care about the boundaries around them: what happens when an event repeats, a provider does not answer, a connection moves, or a diagnosis is wrong. Those are the situations where careful backend design shows up.</p></section>
