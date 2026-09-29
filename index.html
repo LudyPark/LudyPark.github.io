@@ -17,23 +17,23 @@
     <section id="top" class="hero">
       <p class="kicker">KOTLIN BACKEND ENGINEER</p>
       <h1>Jaeeun Park<br>Backend engineer</h1>
-      <p class="intro">I have 5+ years of experience building and operating Kotlin/Spring services for payment flows, mobility, and connected devices. The work I enjoy most starts where a simple request/response model stops being enough: duplicate delivery, delayed provider results, connection ownership, and production failures.</p>
+      <p class="intro">I have 5+ years of experience building and operating Kotlin/Spring services across mobility, connected-device, platform, and payment workflows. My core work has been in production backend systems: distributed message handling, service operations, and the failure cases that appear once a request leaves a single process.</p>
       <div class="actions"><a class="button primary" href="case-studies.html">Read case studies</a><a class="button" href="https://github.com/LudyPark">GitHub ↗</a></div>
     </section>
 
     <div class="stack"><span>Kotlin</span><span>Spring Boot</span><span>PostgreSQL</span><span>AWS</span><span>Kubernetes</span><span>MQTT</span></div>
 
     <section id="work">
-      <div class="heading-row"><h2>Selected work</h2><p>Short summaries here; the linked notes contain the constraints, failure cases, and trade-offs.</p></div>
+      <div class="heading-row"><h2>Selected work</h2><p>Payment is one representative case; the notes also cover real-time messaging and production engineering.</p></div>
       <div class="cards">
-        <article class="card"><p class="number">01 · PAYMENTS</p><h3>One business action, even when events arrive twice</h3><p>A client retry, a provider callback, and a later inquiry can all describe the same payment. I work toward one guarded state change rather than letting each path mutate the order independently.</p><a class="text-link" href="case-studies.html#payments">Read the payment note →</a></article>
-        <article class="card"><p class="number">02 · MESSAGING</p><h3>Routing work without losing the live connection</h3><p>A broker is useful for fan-out and independent consumers. Delivering a command to a device is different: it must reach the service instance that owns the active connection.</p><a class="text-link" href="case-studies.html#mobility">Read the messaging note →</a></article>
-        <article class="card"><p class="number">03 · PRODUCTION</p><h3>Diagnosing before changing code</h3><p>Thread state, heap, transaction lifetime, connection pools, and cloud audit logs answer different questions. I correlate the evidence before deciding where the bottleneck actually is.</p><a class="text-link" href="case-studies.html#reliability">Read the production note →</a></article>
+        <article class="card"><p class="number">01 · REAL-TIME SYSTEMS</p><h3>Message routing and live connection ownership</h3><p>I have worked on mobility and connected-device services where message distribution can scale horizontally, while the final command still has to reach the instance holding the active connection.</p><a class="text-link" href="case-studies.html#mobility">Read the messaging note →</a></article>
+        <article class="card"><p class="number">02 · PRODUCTION ENGINEERING</p><h3>Finding the mechanism behind a production symptom</h3><p>Thread state, heap, transaction lifetime, connection pools, and cloud audit logs answer different questions. I correlate the evidence before deciding where the bottleneck actually is.</p><a class="text-link" href="case-studies.html#reliability">Read the production note →</a></article>
+        <article class="card"><p class="number">03 · PAYMENTS</p><h3>One business action, even when events arrive twice</h3><p>Payment work is one part of my broader backend experience. It required clear state, idempotency, callbacks, and recovery when a provider result was uncertain.</p><a class="text-link" href="case-studies.html#payments">Read the payment note →</a></article>
       </div>
     </section>
 
     <section class="distinctions" aria-label="Reliability distinctions">
-      <article class="distinction"><strong>Idempotency ≠ retry</strong><p>Idempotency keeps the same intent from being applied twice. A retry only decides whether to attempt delivery again.</p></article>
+      <article class="distinction"><strong>Message routing ≠ connection ownership</strong><p>A broker distributes work, but a live device connection still belongs to one service instance and has to be addressed accordingly.</p></article>
       <article class="distinction"><strong>Timeout ≠ failure</strong><p>A caller timing out only means it stopped waiting. The external operation may still complete and need reconciliation.</p></article>
       <article class="distinction"><strong>Thread dump ≠ CPU profile</strong><p>A snapshot helps narrow a hypothesis; accumulated CPU and runtime evidence identify sustained work.</p></article>
     </section>
