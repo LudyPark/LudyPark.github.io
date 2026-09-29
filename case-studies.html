@@ -1,72 +1,208 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Generalized production case studies by Jaeeun Park.">
-  <title>Case Studies | Jaeeun Park</title>
-  <style>
-    :root{--ink:#17181b;--muted:#686b73;--paper:#f6f6f4;--card:#fff;--line:#e5e5e1;--accent:#5b55dc;--soft:#efefff;--dark:#25223d;--sans:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;--mono:ui-monospace,SFMono-Regular,Menlo,monospace}
-    *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.6 var(--sans)}a{color:inherit}main,footer{width:min(1030px,calc(100% - 40px));margin:auto}nav{display:flex;justify-content:space-between;align-items:center;padding:25px 0}.mark{font:800 1.1rem var(--mono);letter-spacing:-.08em;text-decoration:none}.mark i{color:var(--accent);font-style:normal}.back{color:var(--muted);font-size:.9rem;text-decoration:none}.back:hover,.resource a:hover{text-decoration:underline}.hero{max-width:790px;padding:75px 0 55px}.eyebrow,.label{margin:0 0 13px;color:var(--accent);font:700 .72rem var(--mono);letter-spacing:.1em}h1,h2,h3,p{margin-top:0}h1{margin-bottom:20px;font-size:clamp(3rem,7vw,5.2rem);line-height:.98;letter-spacing:-.075em}.lede{margin:0;color:#4f525a;font-size:1.1rem}.legend{display:grid;grid-template-columns:repeat(2,1fr);gap:1px;margin-bottom:74px;border:1px solid var(--line);border-radius:13px;overflow:hidden;background:var(--line)}.legend div{padding:18px 20px;background:#fff;color:var(--muted);font-size:.9rem}.legend strong{display:block;margin-bottom:4px;color:var(--ink);font:.72rem var(--mono);letter-spacing:.06em}.case{padding:58px 0 68px;border-top:1px solid var(--line)}.case-head{display:grid;grid-template-columns:92px minmax(0,1fr);gap:23px;margin-bottom:31px}.number{padding-top:5px;color:var(--accent);font:700 .78rem var(--mono)}.case h2{margin-bottom:14px;font-size:clamp(2rem,4vw,3.35rem);line-height:1.03;letter-spacing:-.065em}.summary{max-width:720px;margin:0;color:#4f525a;font-size:1.04rem}.flow{display:flex;align-items:stretch;gap:8px;margin:0 0 18px}.flow-step{flex:1;padding:14px 15px;border:1px solid var(--line);border-radius:9px;background:#fff;color:#454850;font-size:.84rem}.flow-step strong{display:block;margin-bottom:4px;color:var(--ink);font:.72rem var(--mono);letter-spacing:.05em}.arrow{align-self:center;color:var(--accent);font-weight:800}.content{margin-left:115px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.panel{padding:21px;border:1px solid var(--line);border-radius:12px;background:#fff}.panel.wide{grid-column:1/-1}.panel.accent{border-color:#d9d7ff;background:var(--soft)}.panel h3{margin-bottom:9px;font-size:.95rem;letter-spacing:-.02em}.panel p,.panel li{color:#555861;font-size:.91rem}.panel p:last-child,.panel ul:last-child{margin-bottom:0}.panel ul{margin:0;padding-left:18px}.panel li+li{margin-top:7px}.table{width:100%;border-collapse:collapse;font-size:.89rem}.table th,.table td{padding:11px 9px;border-top:1px solid var(--line);text-align:left;vertical-align:top}.table tr:first-child th,.table tr:first-child td{border-top:0}.table th{width:29%;color:var(--ink);font:700 .72rem/1.4 var(--mono);letter-spacing:.03em}.table td{color:#555861}.questions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 22px;margin:0;padding:0;list-style:none}.questions li{position:relative;padding-left:17px;color:#555861;font-size:.9rem}.questions li:before{content:"?";position:absolute;left:0;color:var(--accent);font-family:var(--mono);font-weight:800}.resource{margin:18px 0 0 115px;padding:17px 20px;border-left:3px solid var(--accent);background:#efefff;color:#575970;font-size:.9rem}.resource strong{color:var(--ink)}.resource a{color:var(--accent);font-weight:700;text-decoration:none}.closing{padding:70px 0 82px;border-top:1px solid var(--line)}.closing h2{max-width:730px;margin-bottom:14px;font-size:clamp(2rem,4vw,3.35rem);line-height:1.04;letter-spacing:-.065em}.closing p{max-width:720px;margin:0;color:#4f525a;font-size:1.04rem}footer{display:flex;justify-content:space-between;gap:20px;padding:0 0 35px;color:var(--muted);font:.72rem var(--mono)}@media(max-width:720px){main,footer{width:min(100% - 30px,1030px)}.hero{padding:56px 0 43px}.legend,.grid,.questions{grid-template-columns:1fr}.legend{margin-bottom:52px}.case{padding:44px 0 53px}.case-head{grid-template-columns:1fr;gap:8px}.number{padding:0}.content,.resource{margin-left:0}.flow{flex-direction:column}.arrow{display:none}.panel.wide{grid-column:auto}.table th{width:37%}footer{flex-direction:column;gap:6px}}
-  </style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Backend engineering work by Jaeeun Park: incident recovery, payment features, message processing, and cloud costs.">
+  <title>Selected Work — Jaeeun Park</title>
+  <style>:root { color-scheme: light; --ink: #202020; --muted: #5d5d5d; --line: #dededb; --paper: #fff; }
+* { box-sizing: border-box; }
+html { scroll-padding-top: 28px; }
+body { margin: 0; background: var(--paper); color: var(--ink); font: 17px/1.75 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; -webkit-font-smoothing: antialiased; }
+a { color: inherit; text-decoration-thickness: 1px; text-underline-offset: 4px; }
+a:hover { text-decoration-thickness: 2px; }
+a:focus-visible, summary:focus-visible { outline: 2px solid #202020; outline-offset: 5px; }
+.wrap { width: min(920px, calc(100% - 80px)); margin-inline: auto; }
+.skip { position: absolute; top: -100px; left: 20px; background: white; padding: 8px; }
+.skip:focus { top: 8px; }
+.site-nav { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding-block: 24px; border-bottom: 1px solid var(--line); font-size: 14px; line-height: 1.5; }
+.site-nav .name { font-weight: 650; text-decoration: none; }
+.nav-links { display: flex; flex-wrap: wrap; gap: 10px 24px; }
+.nav-links a { text-decoration: none; }
+.nav-links a:hover { text-decoration: underline; }
+h1, h2, h3, p, ul, ol, dl, figure { margin-top: 0; }
+h1, h2, h3 { font-weight: 600; text-wrap: balance; }
+h1 { margin-bottom: 18px; font-size: clamp(34px, 4.5vw, 44px); line-height: 1.2; letter-spacing: -.025em; }
+h2 { font-size: 27px; line-height: 1.35; letter-spacing: -.018em; }
+h3 { font-size: 19px; line-height: 1.45; letter-spacing: -.008em; }
+p { margin-bottom: 18px; }
+.intro { padding: 52px 0 36px; max-width: 740px; }
+.role { margin-bottom: 12px; color: var(--muted); font-size: 15px; }
+.intro .lead { margin-bottom: 18px; font-size: 19px; line-height: 1.7; }
+.stack { color: var(--muted); font-size: 14px; line-height: 1.8; margin-bottom: 0; }
+.work-list { border-top: 1px solid var(--line); }
+.section-title { margin: 0; padding: 26px 0 12px; font-size: 17px; }
+.work-row { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 28px; padding: 26px 0 30px; border-bottom: 1px solid var(--line); }
+.work-row h3 { margin-bottom: 9px; font-size: 22px; }
+.work-row h3 a { text-decoration: none; }
+.work-row h3 a:hover { text-decoration: underline; }
+.work-row p { margin-bottom: 10px; }
+.work-row .category { color: var(--muted); font-size: 14px; padding-top: 4px; }
+.work-row .read { font-size: 14px; }
+.experience { padding: 40px 0 28px; }
+.experience h2, .contact h2 { font-size: 22px; margin-bottom: 18px; }
+.experience dl { margin-bottom: 0; }
+.experience dt { font-weight: 600; margin-top: 20px; }
+.experience dd { margin: 5px 0 0; max-width: 740px; color: #444; }
+.contact { padding: 28px 0 38px; }
+.contact p { display: flex; flex-wrap: wrap; gap: 10px 24px; margin-bottom: 0; font-size: 15px; }
+footer { border-top: 1px solid var(--line); padding: 20px 0 28px; color: var(--muted); font-size: 13px; }
+.case-intro { padding-bottom: 25px; }
+.case-intro p { max-width: 690px; }
+.contents { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 22px 0; margin-bottom: 0; }
+.contents p { margin-bottom: 10px; font-size: 14px; font-weight: 600; }
+.contents ol { margin: 0; padding-left: 22px; columns: 2; column-gap: 40px; font-size: 15px; }
+.contents li { margin: 5px 0; break-inside: avoid; }
+.case { padding: 52px 0; border-bottom: 1px solid var(--line); }
+.case-head { max-width: 750px; }
+.case-head .category { color: var(--muted); font-size: 14px; margin-bottom: 8px; }
+.case-head h2 { margin-bottom: 14px; font-size: 30px; }
+.case-head .outcome { margin-bottom: 24px; font-size: 18px; line-height: 1.7; }
+.prose { max-width: 710px; }
+.prose h3 { margin: 30px 0 10px; }
+.prose p { margin-bottom: 17px; }
+.prose ul { padding-left: 23px; margin-bottom: 20px; }
+.prose li { padding-left: 3px; margin: 8px 0; }
+.decision-list { margin: 20px 0; border-top: 1px solid var(--line); }
+.decision-list > div { display: grid; grid-template-columns: 185px minmax(0, 1fr); gap: 20px; padding: 16px 0; border-bottom: 1px solid var(--line); }
+.decision-list dt { font-weight: 600; }
+.decision-list dd { margin: 0; }
+.detail-note { border-left: 2px solid #999; padding-left: 18px; margin: 25px 0; color: #4b4b4b; font-size: 15px; }
+.case-back { display: inline-block; margin-top: 24px; font-size: 14px; }
+.short-work { padding: 40px 0; }
+.short-work h2 { font-size: 23px; margin-bottom: 24px; }
+.short-work h3 { margin: 28px 0 9px; }
+.scope-note { margin: 35px 0; max-width: 710px; color: var(--muted); font-size: 14px; }
+@media (max-width: 640px) {
+  body { font-size: 16px; line-height: 1.75; }
+  .wrap { width: calc(100% - 40px); }
+  .site-nav { padding-block: 20px; gap: 16px; align-items: baseline; }
+  .nav-links { gap: 8px 16px; }
+  .intro { padding: 35px 0 28px; }
+  .intro .lead { font-size: 18px; }
+  .work-row { grid-template-columns: 1fr; gap: 5px; padding: 23px 0 26px; }
+  .work-row .category { padding: 0; margin: 0; }
+  .work-row h3 { font-size: 21px; }
+  .contents ol { columns: 1; }
+  .contents li { margin: 9px 0; }
+  .case { padding: 38px 0; }
+  .case-head h2 { font-size: 26px; }
+  .case-head .outcome { font-size: 17px; }
+  .decision-list > div { grid-template-columns: 1fr; gap: 6px; }
+  .contact p { gap: 12px 20px; }
+}
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+@media print {
+  .wrap { width: 100%; }
+  body { font-size: 11pt; }
+  .nav-links, .skip, .case-back { display: none; }
+  .intro, .case { padding-block: 20px; }
+  h2, h3 { break-after: avoid; }
+  a { text-decoration: none; }
+}
+</style>
 </head>
 <body>
-  <main>
-    <nav><a class="mark" href="./">JP<i>.</i></a><a class="back" href="./">← Portfolio home</a></nav>
+  <a class="skip" href="#main">Skip to content</a>
+  <div class="wrap">
+    <nav class="site-nav" aria-label="Main navigation"><a class="name" href="./">Jaeeun Park</a><div class="nav-links"><a href="./">Home</a><a href="./#contact">Contact</a></div></nav>
+    <main id="main">
+      <header class="intro case-intro"><h1>Selected work</h1><p>Problems I worked on in production, the changes I made, and what happened after release.</p></header>
+      <nav id="contents" class="contents" aria-label="Case studies"><p>On this page</p><ol>
+        <li><a href="#reliability">Repeated out-of-memory restarts</a></li>
+        <li><a href="#payments">Tipping payments</a></li>
+        <li><a href="#mobility">Message processing across instances</a></li>
+        <li><a href="#cloud-cost">S3 API costs</a></li>
+        <li><a href="#more-work">Other work</a></li>
+      </ol></nav>
 
-    <header class="hero">
-      <p class="eyebrow">PRODUCTION NOTES</p>
-      <h1>Backend work, with the hard parts included.</h1>
-      <p class="lede">These notes describe generalized production experience in mobility and connected-device systems, backend operations, and payment workflows. They focus on boundaries, failure cases, and trade-offs—not on a polished happy path. Employer names, internal identifiers, source code, customer data, and non-public metrics are intentionally excluded.</p>
-    </header>
-
-    <section class="legend" aria-label="Claim legend">
-      <div><strong>IMPLEMENTED / INVESTIGATED</strong>Work I built, operated, or diagnosed in production.</div>
-      <div><strong>DESIGN DIRECTION</strong>A proposed improvement, labelled separately from shipped behaviour.</div>
-    </section>
-
-    <article class="case" id="mobility">
-      <header class="case-head"><p class="number">01</p><div><p class="label">MESSAGING · MQTT · CONNECTION OWNERSHIP</p><h2>A broker can distribute work. It cannot own a socket for you.</h2><p class="summary">In connected-device and mobility systems, inbound events can scale through a broker while outbound commands still have to reach the process holding a live connection. Treating those paths as the same problem creates hard-to-debug delivery failures.</p></div></header>
-      <div class="content">
-        <div class="flow" aria-label="Incoming and outgoing message paths"><div class="flow-step"><strong>INBOUND</strong>Device event → broker → domain consumer</div><span class="arrow">↔</span><div class="flow-step"><strong>OWNER</strong>One service instance holds the live connection</div><span class="arrow">↔</span><div class="flow-step"><strong>OUTBOUND</strong>Command → owner resolution → device</div></div>
-        <div class="grid">
-          <section class="panel"><h3>Implemented / investigated</h3><ul><li>Worked on Kotlin/Spring services handling mobility and connected-device workflows.</li><li>Used broker-mediated distribution for independently scalable consumer work.</li><li>Reasoned about connection lifecycle, reconnection, duplicate delivery, and consumer lag as normal operating conditions.</li></ul></section>
-          <section class="panel"><h3>The key boundary</h3><p>Event consumers can be assigned work through a broker. A device command is different when the connection itself lives in one application instance. The system needs a way to resolve that owner before delivery.</p></section>
-          <section class="panel wide"><h3>Conditions to make explicit</h3><table class="table"><tbody><tr><th>Connection drops</th><td>The owner record can become stale. Delivery needs a clear unavailable/retry path rather than silently treating a missing socket as success.</td></tr><tr><th>Event is repeated</th><td>Broker delivery is commonly at-least-once. Consumers need a stable event identity or a state transition that is safe to repeat.</td></tr><tr><th>Command reaches the wrong instance</th><td>Random consumer selection is not enough for an in-memory connection. Route through owner resolution or a connection-aware delivery channel.</td></tr><tr><th>Backlog grows</th><td>Lag is an operational signal, not merely a queue detail. Measure it and distinguish slow consumers from a downstream dependency failure.</td></tr></tbody></table></section>
-          <section class="panel accent wide"><h3>Trade-off</h3><p>Keeping connection ownership in memory makes low-latency delivery straightforward, but adds lifecycle coordination. Moving every command through a central store simplifies ownership at the cost of another hop and different failure modes. The right choice depends on ordering, latency, and reconnect behaviour—not on whether a broker is already present.</p></section>
-          <section class="panel wide"><h3>Review questions I would expect</h3><ul class="questions"><li>How does a command find the instance that owns the active connection?</li><li>What does success mean if the device disconnects after the command is accepted?</li><li>Where is duplicate delivery made safe: the broker, the consumer, or the domain state?</li><li>What evidence separates consumer lag from an unavailable downstream system?</li></ul></section>
+      <article id="reliability" class="case">
+        <header class="case-head"><p class="category">Incident investigation · Kotlin / Spring Boot</p><h2>Stopping repeated out-of-memory restarts</h2><p class="outcome">I reduced repeated alert work and moved external reporting out of the database transaction. Memory use settled and the service stopped restarting from OOM.</p></header>
+        <div class="prose">
+          <h3>What was happening</h3>
+          <p>A service kept running out of memory after deployment. Giving it more memory did not stop the growth. CPU use rose before memory, so I started by looking at the work the service was doing.</p>
+          <h3>What I found</h3>
+          <p>When two sources of device data disagreed, each incoming packet generated another alert for the same unresolved condition. The error-reporting SDK repeatedly serialized the attached data. Thread dumps helped me locate that work.</p>
+          <p>The alert work was inside a database transaction. Slow reporting kept transactions open longer, increased pressure on the connection pool, and left more incoming work waiting.</p>
+          <h3>What I changed</h3>
+          <p>I reduced how often the same unresolved condition could trigger an alert. I also moved external alert reporting outside the transaction so it no longer extended the database work.</p>
+          <h3>Result and limit</h3>
+          <p>After the change, memory use stabilized and the OOM restarts stopped. The fix addressed the repeated work and its transaction boundary.</p>
+          <p class="detail-note">This change did not guarantee alert delivery after a database commit. A process failure in between could lose an alert. Guaranteed delivery would need a durable handoff, such as an outbox; that was not part of this fix.</p>
         </div>
-      </div>
-    </article>
+        <a class="case-back" href="#contents">Back to contents</a>
+      </article>
 
-    <article class="case" id="reliability">
-      <header class="case-head"><p class="number">02</p><div><p class="label">PRODUCTION RELIABILITY · DIAGNOSIS</p><h2>Use each piece of evidence for the question it can actually answer.</h2><p class="summary">I have investigated production symptoms and recurring cloud usage by first narrowing the hypothesis. The goal is not to collect more logs; it is to distinguish active work, retained memory, transaction contention, and external dependency behaviour before changing code.</p></div></header>
-      <div class="content">
-        <div class="grid">
-          <section class="panel"><h3>Implemented / investigated</h3><ul><li>Investigated backend reliability symptoms with runtime and application evidence.</li><li>Examined transaction boundaries around slow external dependencies.</li><li>Reduced recurring cloud API usage after tracing request origin and volume.</li><li>Led framework upgrades across production services.</li></ul></section>
-          <section class="panel"><h3>Operating principle</h3><p>Operational symptoms are ambiguous. A thread snapshot, a heap dump, a database metric, and an audit trail are useful because they rule out different explanations—not because any one of them proves the cause on its own.</p></section>
-          <section class="panel wide"><h3>Evidence map</h3><table class="table"><tbody><tr><th>High CPU</th><td>A thread dump is only a moment in time. Use CPU sampling or accumulated CPU evidence to find sustained work; RUNNABLE alone is not proof of CPU ownership.</td></tr><tr><th>Heap growth / OOM</th><td>Use a heap dump to inspect retained objects and reference paths. Thread state cannot establish why memory remains reachable.</td></tr><tr><th>Slow request with database pressure</th><td>Inspect transaction duration, connection-pool wait, query timing, and whether an external network call is being held inside the transaction.</td></tr><tr><th>Unexpected cloud cost</th><td>Start with audit records: principal, action, frequency, and caller. Then reduce the unnecessary work and verify behaviour over time.</td></tr></tbody></table></section>
-          <section class="panel accent wide"><h3>Transactional boundary</h3><p>A database transaction is a consistency boundary for database work; it is not a safety blanket for a remote call. Holding it while waiting on an external provider increases lock and pool pressure, while still not making that provider operation atomic. I keep the database decision short and make the remaining recovery path explicit.</p></section>
-          <section class="panel wide"><h3>Review questions I would expect</h3><ul class="questions"><li>What observation distinguishes high allocation from retained-memory growth?</li><li>Why is a RUNNABLE thread not enough evidence for a CPU conclusion?</li><li>Which transaction boundary is necessary, and which one merely holds resources during a remote wait?</li><li>How do you prove a cost optimisation continues to work after the first deployment?</li></ul></section>
+      <article id="payments" class="case">
+        <header class="case-head"><p class="category">Feature development · Kotlin / Spring Boot</p><h2>Adding tips across different payment flows</h2><p class="outcome">I designed and implemented the backend payment flow for tipping and rolled it out across supported regions.</p></header>
+        <div class="prose">
+          <h3>The requirement</h3>
+          <p>A rider could add a tip before or after the fare was charged. Payment providers supported different ways to hold, capture, and confirm funds. A tip could also use a different payment method from the fare.</p>
+          <h3>How I split the flow</h3>
+          <p>I chose the payment path based on timing and payment method. Capture is the step that collects a previously authorized amount.</p>
+          <dl class="decision-list">
+            <div><dt>Before fare capture</dt><dd>Include the tip in the final fare capture when it uses the same payment method and the provider supports that path.</dd></div>
+            <div><dt>After fare capture</dt><dd>Create a separate tip transaction because the fare has already been collected.</dd></div>
+            <div><dt>Different payment method</dt><dd>Create a separate transaction using the selected method.</dd></div>
+            <div><dt>Waiting for a callback</dt><dd>Keep the transaction in a processing state until the provider confirms the result.</dd></div>
+          </dl>
+          <h3>Duplicate requests and fees</h3>
+          <p>I used a per-ride idempotency key and a distributed lock to prevent repeated or overlapping requests from creating duplicate tip charges. The key identified the same operation; the lock controlled concurrent processing.</p>
+          <p>When the tip and fare were collected together, I excluded the tip from the platform-fee calculation. I also recorded the payment fee for the tip separately.</p>
+          <h3>Result</h3>
+          <p>The feature reached production across the supported regions. It handled both combined and separate payments, with fee records that kept tips distinct from the fare.</p>
+          <h3>Related work: fare increases during a ride</h3>
+          <p>For a provider that could not increase an existing payment hold, I compared replacing the full hold with adding a second hold for the extra fare. I implemented the second option and captured the holds separately at ride completion. Keeping the original hold in place limited the amount at risk to the fare increase.</p>
         </div>
-      </div>
-    </article>
+        <a class="case-back" href="#contents">Back to contents</a>
+      </article>
 
-    <article class="case" id="payments">
-      <header class="case-head"><p class="number">03</p><div><p class="label">PAYMENTS · STATE &amp; RECOVERY</p><h2>Payment state must survive an unclear provider response.</h2><p class="summary">The payment flows I worked on involved multiple payment methods and asynchronous provider outcomes. The important choice was to make the payment lifecycle explicit, rather than assuming a synchronous response tells the whole story.</p></div></header>
-      <div class="content">
-        <div class="flow" aria-label="Payment paths converge on one guarded transition"><div class="flow-step"><strong>CLIENT</strong>Request or retry</div><span class="arrow">→</span><div class="flow-step"><strong>PROVIDER</strong>Response may be delayed or lost</div><span class="arrow">→</span><div class="flow-step"><strong>PAYMENT STATE</strong>One guarded transition</div><span class="arrow">←</span><div class="flow-step"><strong>ASYNC PATHS</strong>Callback or inquiry</div></div>
-        <div class="grid">
-          <section class="panel"><h3>Implemented / investigated</h3><ul><li>Used explicit intermediate and terminal states instead of interpreting a client timeout as a failed payment.</li><li>Handled repeat requests idempotently around payment changes.</li><li>Processed asynchronous callbacks and used a later inquiry path for unresolved provider outcomes.</li><li>Supported a regional rollout of tipping payments.</li></ul></section>
-          <section class="panel"><h3>Ownership boundary</h3><p>The customer-facing business change and the provider transaction are related, but not the same record of truth. I keep a stable external reference and apply callback or inquiry results through controlled internal transitions.</p></section>
-          <section class="panel wide"><h3>Failure cases the flow has to answer</h3><table class="table"><tbody><tr><th>Same request again</th><td>A repeated client submission is matched to the logical operation. It should return or continue the existing work, not start a second provider operation.</td></tr><tr><th>Provider completed; caller timed out</th><td>The caller stopping its wait does not establish provider failure. Keep the operation unresolved until an inquiry or callback supplies a definitive outcome.</td></tr><tr><th>Callback arrives twice or late</th><td>Use the stable provider reference and make terminal transitions idempotent. A replay must not capture twice or move a completed payment backward.</td></tr><tr><th>Work cannot be processed now</th><td>Retry, DLQ, and idempotency are separate tools: delivery retry, isolation for manual/controlled handling, and safety under repeated processing.</td></tr></tbody></table></section>
-          <section class="panel accent wide"><h3>Design direction: no-row concurrency</h3><p>A row lock cannot protect a payment-change record before it exists. For a redesigned concurrent change flow, I would claim a short-lived state on an existing aggregate record, commit that decision, and call the provider outside the database transaction. This is a design proposal, not a claim about an already-shipped path.</p></section>
-          <section class="panel wide"><h3>Review questions I would expect</h3><ul class="questions"><li>Which source is authoritative when the provider may have completed after the local timeout?</li><li>What is the concurrency anchor before a new payment record exists?</li><li>Why must a remote provider call not hold a database transaction open?</li><li>What prevents a late callback from changing a completed state?</li></ul></section>
+      <article id="mobility" class="case">
+        <header class="case-head"><p class="category">Message processing · MQTT / Kubernetes</p><h2>Making message processing work across service instances</h2><p class="outcome">I changed how incoming messages and outgoing commands were distributed. Adding instances no longer caused each instance to write the same incoming data.</p></header>
+        <div class="prose">
+          <h3>Why adding instances failed</h3>
+          <p>The service had two problems. Every instance received the same incoming MQTT messages, which caused duplicate database writes. Outgoing device commands could also reach an instance that did not hold the device's live connection.</p>
+          <h3>Incoming messages</h3>
+          <p>I moved incoming work to MQTT shared subscriptions so the broker could distribute messages across consumers. During a local proof of concept, the existing client path lost shared-subscription messages. I found that the newer library versions still used the same underlying client, so I replaced the MQTT integration with the HiveMQ client.</p>
+          <h3>Outgoing commands</h3>
+          <p>The live connection belonged to one service instance. A shared lookup could identify a connection, but it could not make the connection object available in another process.</p>
+          <p>I used a broadcast path for commands. Each instance received the command, and only the instance holding the connection sent it to the device. Incoming data and outgoing commands therefore used different distribution rules.</p>
+          <h3>Result and trade-off</h3>
+          <p>The changes removed duplicate writes caused by every instance processing the same incoming message. The service could share incoming work across instances on Kubernetes while still sending commands through the instance that held the connection.</p>
+          <p class="detail-note">Broadcasting makes every instance inspect each command, so that work grows with the number of instances. Shared subscriptions also do not guarantee exactly-once processing. These are separate limits from the duplicate delivery caused by the old subscription setup.</p>
         </div>
-      </div>
-      <p class="resource"><strong>Supporting example:</strong> a small independent Kotlin reference demonstrates idempotent request handling and query-based recovery. It is not presented as production source code. <a href="https://github.com/LudyPark/payment-reconciliation-lab">View repository →</a></p>
-    </article>
-  </main>
-  <footer><span>© 2026 Jaeeun Park</span><span>Generalized production notes</span></footer>
+        <a class="case-back" href="#contents">Back to contents</a>
+      </article>
+
+      <article id="cloud-cost" class="case">
+        <header class="case-head"><p class="category">Cost investigation · AWS S3 / CloudTrail / Athena</p><h2>Finding the queries behind rising S3 costs</h2><p class="outcome">I traced repeated storage requests to unused analytics schedules. Removing those schedules reduced recurring S3 API costs.</p></header>
+        <div class="prose">
+          <h3>The first lead</h3>
+          <p>List requests to a data-lake bucket had become expensive. A change to the data crawler looked like a possible explanation, but delayed billing made it hard to tell whether that change had helped.</p>
+          <h3>How I checked it</h3>
+          <p>I grouped CloudTrail records by user agent to see which tool made the requests. Athena accounted for most of them. I then compared query execution history with the request spikes and traced the activity back to scheduled dashboard queries.</p>
+          <h3>What I changed</h3>
+          <p>The schedules were no longer used, but they still scanned broad partition ranges. I stopped the unused schedules and checked the daily S3 API cost afterward. The cost fell.</p>
+          <p>The scope of this result was S3 API requests. It was not a reduction of the whole AWS bill.</p>
+        </div>
+        <a class="case-back" href="#contents">Back to contents</a>
+      </article>
+
+      <section id="more-work" class="short-work prose" aria-labelledby="more-title">
+        <h2 id="more-title">Other work</h2>
+        <h3>Improving battery-level readings</h3>
+        <p>I used field data to investigate large drops in the displayed battery level while driving. I removed cached helper packets from the measurements, used movement history to detect stops, and applied filtering suited to driving and stopped states. The display became more stable, and pricing used the latest stopped-state reading.</p>
+        <h3>Building operations tools and mobile features</h3>
+        <p>I built GraphQL APIs and admin screens for vehicle assignment and lifecycle management. I also maintained a React Native driver app, added promotion and pricing features, and kept its build and release pipeline running.</p>
+        <h3>Maintaining shared review tools</h3>
+        <p>I built a GitHub Actions workflow to keep review configuration in sync across repositories. Review prompts followed the repository's stack and the type of change, with separate checks for SQL and database migrations.</p>
+        <h3>Earlier work: device integration and query tuning</h3>
+        <p>I built a mobile SDK that connected BLE devices to the server through a phone, extending a platform that had only supported Wi-Fi devices. I also improved a slow reporting query by replacing nested subqueries with joins and changing its union structure.</p>
+      </section>
+      <p class="scope-note">These accounts are based on my work. Company names, internal identifiers, and private figures are omitted.</p>
+      <section class="contact" aria-label="Contact"><p><a href="mailto:jjomang7602@gmail.com">Email</a><a href="https://www.linkedin.com/in/ludy-jaeeun-park/">LinkedIn</a><a href="https://github.com/LudyPark">GitHub</a></p></section>
+    </main>
+    <footer>© 2026 Jaeeun Park</footer>
+  </div>
 </body>
 </html>
