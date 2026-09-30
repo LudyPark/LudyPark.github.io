@@ -82,121 +82,14 @@
     <nav class="contents" aria-label="Case studies">
       <p>On this page</p>
       <ol>
-        <li><a href="#messaging">Message processing across instances</a></li>
-        <li><a href="#reliability">Repeated out-of-memory restarts</a></li>
-        <li><a href="#battery">Battery-level signal stability</a></li>
         <li><a href="#payments">Tipping payment flows</a></li>
+        <li><a href="#authorization">Additional payment authorization</a></li>
+        <li><a href="#reliability">Repeated out-of-memory restarts</a></li>
+        <li><a href="#messaging">Message processing across instances</a></li>
         <li><a href="#cloud-cost">S3 API cost investigation</a></li>
+        <li><a href="#battery">Battery-level signal stability</a></li>
       </ol>
     </nav>
-
-    <article id="messaging" class="case">
-      <p class="category">Message processing · MQTT / Kubernetes</p>
-      <h2>Making message processing work across service instances</h2>
-      <p class="outcome">When a service moved from one pod to two, both pods wrote the same incoming device data. I separated incoming work distribution from live-connection ownership so the service could scale without duplicate writes.</p>
-      <dl class="case-summary">
-        <div><dt>Situation</dt><dd>One service ingested device messages and also held TCP connections used to send commands. With two replicas, one message was processed twice.</dd></div>
-        <div><dt>My role</dt><dd>I redesigned the client and routing paths for incoming messages and outgoing commands.</dd></div>
-        <div><dt>Key decision</dt><dd>Use broker-side shared subscriptions for ingestion; use fanout only for a command that must reach the process holding the live socket.</dd></div>
-        <div><dt>Result</dt><dd>Adding a second instance no longer made each instance persist the same incoming data.</dd></div>
-      </dl>
-      <div class="prose">
-        <h3>What made the change non-trivial</h3>
-        <p>The two flows looked similar but had different ownership rules. Incoming telemetry is work that one consumer should handle. An outgoing command has to be sent through a specific process-local socket; the message broker cannot own that socket for the application.</p>
-        <h3>What I changed</h3>
-        <p>I moved incoming consumption to an MQTT shared subscription so the broker assigns a message to one eligible consumer. For commands, I published to a topic that all instances received. Each instance checked its local connection registry; only the instance that owned the socket sent the command.</p>
-        <h3>How I validated it</h3>
-        <p>I tested with multiple replicas and checked that incoming data had one persistence path while a command was sent only by the instance with the relevant connection.</p>
-        <p class="detail-note">Shared subscriptions remove the old duplicate-consumption behavior, but they do not create exactly-once processing. Connection changes and command acknowledgement remain separate design concerns.</p>
-        <details>
-          <summary>Technical note: distribution and connection ownership</summary>
-          <div class="note-body">
-            <h4>Why the original approach failed</h4>
-            <p>Every replica subscribed to the same incoming topic. That was fine with one pod, but two replicas each received and saved the same packet. The visible data duplication was a symptom of consumer fanout, not a database issue.</p>
-            <h4>Alternatives I considered</h4>
-            <ul>
-              <li><strong>Keep application-level distribution:</strong> possible, but it retained an unnecessary coordinator for work that the broker already distributes.</li>
-              <li><strong>Route commands through one central process:</strong> it simplified command selection but added another availability bottleneck and still did not solve socket ownership after reconnects.</li>
-              <li><strong>Use a shared subscription for both directions:</strong> correct for ingestion, wrong for commands because only one process can use a given local socket.</li>
-            </ul>
-            <h4>Client-library decision</h4>
-            <p>The existing integration did not reliably receive shared-subscription messages in a proof of concept. I evaluated a newer version of the same client family, found the same underlying limitation for this path, and changed the MQTT integration to a client that supported the required subscription behavior.</p>
-            <h4>Remaining boundary</h4>
-            <p>For a command that needs a stronger delivery guarantee, the next design would need explicit ownership discovery, connection-change handling, acknowledgement, and retry semantics. Those were not implied by distributing messages across pods.</p>
-          </div>
-        </details>
-      </div>
-    </article>
-
-    <article id="reliability" class="case">
-      <p class="category">Incident investigation · Kotlin / Spring Boot</p>
-      <h2>Stopping repeated out-of-memory restarts</h2>
-      <p class="outcome">A service restarted from OOM every 3–5 minutes. Increasing memory did not help. I traced the repeating work, changed the transaction boundary, and the service stabilized at about 2.4 GB.</p>
-      <dl class="case-summary">
-        <div><dt>Situation</dt><dd>Memory continued growing beyond 10 GB after a deployment, even after increasing the allocated memory.</dd></div>
-        <div><dt>My role</dt><dd>I investigated the runtime behavior and implemented the error-handling change.</dd></div>
-        <div><dt>Key decision</dt><dd>Reduce repeated reporting work and move an external error-reporting call out of the database transaction.</dd></div>
-        <div><dt>Result</dt><dd>The 3–5 minute restart loop stopped; steady memory was about 2.4 GB.</dd></div>
-      </dl>
-      <div class="prose">
-        <h3>Diagnosis</h3>
-        <p>Resource size was not the cause: after the limit increased from 4 GB to 8 GB, memory still grew past 10 GB. A thread dump showed an error-reporting SDK recursively serializing attachment objects through reflection, with one path consuming CPU for tens of seconds.</p>
-        <p>That SDK call ran inside a transaction. The transaction grew from roughly 10 seconds to 30–40 seconds, which exhausted the connection pool. Incoming messages then waited in memory while the same failure path continued to create reporting work.</p>
-        <h3>What I changed</h3>
-        <p>I first reduced repeated reporting for the unresolved condition, then moved the external call outside the transaction. This shortened the transactional critical section and stopped coupling database connections to a slow third-party serialization path.</p>
-        <h3>How I checked the result</h3>
-        <p>After release, I watched for the previous restart pattern and memory growth rather than treating a successful deployment as proof. The restart loop did not return and the service settled at about 2.4 GB.</p>
-        <p class="detail-note">This fix did not make alert delivery durable after commit. A transactional outbox would be a separate improvement if delivery had to survive a process failure between the database commit and the external call.</p>
-        <details>
-          <summary>Technical note: separating symptom from cause</summary>
-          <div class="note-body">
-            <h4>Signals I used</h4>
-            <ul>
-              <li>Memory-limit changes did not change the growth pattern.</li>
-              <li>Thread dumps showed long CPU time in error-report object serialization.</li>
-              <li>Slow external work extended transactions and made the connection pool the next bottleneck.</li>
-            </ul>
-            <h4>Why I did not stop at “increase memory”</h4>
-            <p>More memory only delayed the restart while the same reporting work and blocked transactions accumulated. I chose the narrower change that removed the observed amplifier instead of tuning the symptom.</p>
-            <h4>Why the external call moved</h4>
-            <p>The database transaction should protect the database update, not wait on a third-party SDK whose latency and object traversal are outside its control. Moving it out reduced the time that a pooled database connection was held.</p>
-          </div>
-        </details>
-      </div>
-    </article>
-
-    <article id="battery" class="case">
-      <p class="category">Telemetry processing · Kotlin / Redis</p>
-      <h2>Stabilizing battery-level readings while a vehicle is moving</h2>
-      <p class="outcome">A voltage-only battery reading dropped and rebounded under driving load. I implemented a state-aware filter that reduced the maximum visible drop during driving from 25 percentage points to about 6.</p>
-      <dl class="case-summary">
-        <div><dt>Situation</dt><dd>A noisy physical signal affected both a customer-facing value and a battery-replacement pricing rule.</dd></div>
-        <div><dt>My role</dt><dd>I tested the telemetry assumptions, implemented the filtering pipeline, and released it to production.</dd></div>
-        <div><dt>Key decision</dt><dd>Use a causal three-stage filter and separate the display value from the stopped-state value used for pricing.</dd></div>
-        <div><dt>Result</dt><dd>Maximum visible drop while driving improved from 25 percentage points to about 6.</dd></div>
-      </dl>
-      <div class="prose">
-        <h3>Context and investigation</h3>
-        <p>Battery level was derived linearly from terminal voltage. Driving load could lower voltage by 1–2 V, so the displayed level fell sharply and then recovered at a stop. Field data also showed that two assumptions were unreliable: helper packets were not always valid input, and speed zero did not always mean the vehicle had stopped.</p>
-        <h3>What I implemented</h3>
-        <p>The pipeline first clamped physically implausible values, then used a causal Hampel filter to reject local outliers without looking ahead in time, and finally applied an asymmetric EMA that responded differently while moving and stopped. Pricing used the latest stopped-state reading rather than a transient reading taken under load.</p>
-        <h3>Why this shape</h3>
-        <p>The filter had to run online, so it could not rely on future samples. Each stage owned a different problem—impossible values, isolated local spikes, and the response speed of a user-facing display—rather than hiding all behavior in one broad smoothing rule.</p>
-        <details>
-          <summary>Technical note: alternatives and trade-offs</summary>
-          <div class="note-body">
-            <h4>Options I ruled out</h4>
-            <ul>
-              <li><strong>Ignore a falling value while driving:</strong> stable-looking, but it could hide a real battery drop.</li>
-              <li><strong>Increase upload frequency:</strong> more samples did not correct a load-dependent measurement error and increased data volume.</li>
-              <li><strong>Use a symmetric moving average:</strong> simpler, but it lagged genuine changes and did not distinguish moving from stopped behavior.</li>
-            </ul>
-            <h4>Verification</h4>
-            <p>I compared before-and-after driving data, then separately checked the stopped-state reading used by the pricing flow. The target was not simply a smoother chart: it was a stable display without treating every low reading as invalid or reusing a moving-state reading for pricing.</p>
-          </div>
-        </details>
-      </div>
-    </article>
 
     <article id="payments" class="case">
       <p class="category">Feature delivery · Kotlin / Spring Boot</p>
@@ -216,20 +109,133 @@
         <h3>What this demonstrates</h3>
         <p>For a payment feature, the visible UI action is only the start. The backend design has to state which operation is allowed in each state, what happens after an uncertain provider response, and where duplicate prevention ends.</p>
         <details>
-          <summary>Technical note: duplicate prevention and state boundaries</summary>
+          <summary>Decision record: payment state, duplicate protection, and accounting</summary>
           <div class="note-body">
-            <h4>Why two layers were used</h4>
-            <p>A distributed lock reduces the chance that concurrent requests reach the provider together. It is not a permanent correctness boundary: locks can expire and processes can fail. The database constraint is the durable last line of defense for records that must not be created twice.</p>
-            <h4>Provider confirmation</h4>
-            <p>A request timeout does not prove that the provider did not process a payment. The flow therefore treats provider outcome and local persistence as separate states, and reconciliation or status lookup is needed when the response is uncertain.</p>
-            <h4>Accounting choice</h4>
-            <p>Keeping tips separate from the ride fare made fee calculation and later support investigation explicit. It avoided treating a business distinction as a parsing problem in downstream queries.</p>
+            <h4>State determined the provider operation</h4>
+            <p>The first branch was not a UI choice. Before the fare capture, a tip could join the fare only when the payment method and provider capability matched. After capture, the original authorization could no longer be changed, so the tip became an independent transaction. A callback-pending request remained in a processing state rather than being treated as a failure.</p>
+            <h4>Why the lock was not the correctness boundary</h4>
+            <p>The distributed lock reduced the chance that concurrent requests reached the provider at the same time. It was intentionally treated as a contention-control mechanism, not proof of uniqueness: a lock can expire or a process can fail. The durable database uniqueness rule remained the last guard against creating the same per-ride tip record twice.</p>
+            <h4>Unknown provider outcome</h4>
+            <p>A timeout means the client did not receive a response; it does not prove the provider did not accept the operation. Local state and provider state therefore progressed separately. When the outcome was uncertain, status lookup or reconciliation was required before deciding whether to retry or finalize the record.</p>
+            <h4>Why the financial records stayed separate</h4>
+            <p>Fare, tip, and their fees had different business meaning. Recording them separately made fee calculation and later support investigation deterministic instead of depending on reconstructing one combined amount downstream.</p>
           </div>
         </details>
       </div>
     </article>
 
-    <article id="cloud-cost" class="case">
+    <article id="authorization" class="case">
+      <p class="category">Payment authorization · Kotlin / Spring Boot</p>
+      <h2>Handling a fare increase after the original authorization</h2>
+      <p class="outcome">A provider could not increase an existing authorization. I used a separate hold for only the additional amount, keeping the original ride payment outside the new failure path.</p>
+      <dl class="case-summary">
+        <div><dt>Situation</dt><dd>A destination or fare change could increase the final amount after the initial authorization had already been created.</dd></div>
+        <div><dt>My role</dt><dd>I compared the payment options and implemented the authorization and capture flow for the additional amount.</dd></div>
+        <div><dt>Key decision</dt><dd>Keep the original hold unchanged and create a separate hold only for the incremental fare.</dd></div>
+        <div><dt>Result</dt><dd>A failure in the additional authorization affected only the fare increase, not the original ride payment.</dd></div>
+      </dl>
+      <div class="prose">
+        <h3>Constraint</h3>
+        <p>The provider did not support increasing an existing payment hold. The backend needed to preserve the original authorization while still collecting a legitimate fare increase at settlement.</p>
+        <h3>Options and decision</h3>
+        <p>I compared replacing the full hold with adding a second hold for the difference. Replacing the original hold would put the whole authorized amount at risk if the new authorization failed. I chose a separate hold for only the difference, then captured each hold at settlement.</p>
+        <h3>Failure boundary</h3>
+        <p>The additional authorization and its capture were handled as their own payment path. A failure was isolated to the incremental amount so it did not turn the successful original payment into a broader ride-payment failure.</p>
+        <details>
+          <summary>Technical note: why the smaller hold was safer</summary>
+          <div class="note-body">
+            <h4>Replace the full hold</h4>
+            <p>This could leave a single final authorization, but it would require releasing or replacing the original amount first. If the new authorization failed, the payment risk covered the entire fare rather than only the change.</p>
+            <h4>Hold the difference separately</h4>
+            <p>This creates two captures at settlement, which adds bookkeeping. In return, the original successful authorization remains intact and the failure scope is limited to the extra amount.</p>
+            <h4>What still needs explicit handling</h4>
+            <p>Provider responses can be uncertain, so the additional hold has its own confirmation and recovery path. The existence of two holds does not remove the need to reconcile provider state before deciding a final payment outcome.</p>
+          </div>
+        </details>
+      </div>
+    </article>
+
+<article id="reliability" class="case">
+      <p class="category">Incident investigation · Kotlin / Spring Boot</p>
+      <h2>Stopping repeated out-of-memory restarts</h2>
+      <p class="outcome">A service restarted from OOM every 3–5 minutes. Increasing memory did not help. I traced the repeating work, changed the transaction boundary, and the service stabilized at about 2.4 GB.</p>
+      <dl class="case-summary">
+        <div><dt>Situation</dt><dd>Memory continued growing beyond 10 GB after a deployment, even after increasing the allocated memory.</dd></div>
+        <div><dt>My role</dt><dd>I investigated the runtime behavior and implemented the error-handling change.</dd></div>
+        <div><dt>Key decision</dt><dd>Reduce repeated reporting work and move an external error-reporting call out of the database transaction.</dd></div>
+        <div><dt>Result</dt><dd>The 3–5 minute restart loop stopped; steady memory was about 2.4 GB.</dd></div>
+      </dl>
+      <div class="prose">
+        <h3>Diagnosis</h3>
+        <p>Resource size was not the cause: after the limit increased from 4 GB to 8 GB, memory still grew past 10 GB. A thread dump showed an error-reporting SDK recursively serializing attachment objects through reflection, with one path consuming CPU for tens of seconds.</p>
+        <p>That SDK call ran inside a transaction. The transaction grew from roughly 10 seconds to 30–40 seconds, which exhausted the connection pool. Incoming messages then waited in memory while the same failure path continued to create reporting work.</p>
+        <h3>What I changed</h3>
+        <p>I first reduced repeated reporting for the unresolved condition, then moved the external call outside the transaction. This shortened the transactional critical section and stopped coupling database connections to a slow third-party serialization path.</p>
+        <h3>How I checked the result</h3>
+        <p>After release, I watched for the previous restart pattern and memory growth rather than treating a successful deployment as proof. The restart loop did not return and the service settled at about 2.4 GB.</p>
+        <p class="detail-note">This fix did not make alert delivery durable after commit. A transactional outbox would be a separate improvement if delivery had to survive a process failure between the database commit and the external call.</p>
+        <details>
+          <summary>Investigation record: from memory pressure to the work creating it</summary>
+          <div class="note-body">
+            <h4>Evidence chain</h4>
+            <ul>
+              <li>Increasing the memory limit did not change the growth pattern, so capacity was not the root cause.</li>
+              <li>Thread dumps showed sustained CPU time in recursive object serialization performed by the reporting SDK.</li>
+              <li>The external call held a transaction open long enough to consume pooled database connections.</li>
+              <li>Once the pool was constrained, incoming work accumulated in memory and the original failure path generated more reporting work.</li>
+            </ul>
+            <h4>Decision criterion</h4>
+            <p>I did not optimize the serializer because the immediate incident was amplified by two observed conditions: repeated reports for an unresolved error and third-party work inside the transactional critical section. The released change removed those amplifiers before considering a deeper SDK-level change.</p>
+            <h4>Transaction boundary</h4>
+            <p>The transaction needed to protect the database update, not wait on a networked SDK whose latency and object traversal were outside the database's control. Moving the call out reduced connection hold time and kept rollback semantics scoped to the database work.</p>
+            <h4>Known limitation</h4>
+            <p>After commit, a process failure can still prevent the external report. A transactional outbox would add durable handoff, but that was a separate delivery guarantee and was not claimed by this incident fix.</p>
+          </div>
+        </details>
+      </div>
+    </article>
+
+<article id="messaging" class="case">
+      <p class="category">Message processing · MQTT / Kubernetes</p>
+      <h2>Making message processing work across service instances</h2>
+      <p class="outcome">When a service moved from one pod to two, both pods wrote the same incoming device data. I separated incoming work distribution from live-connection ownership so the service could scale without duplicate writes.</p>
+      <dl class="case-summary">
+        <div><dt>Situation</dt><dd>One service ingested device messages and also held TCP connections used to send commands. With two replicas, one message was processed twice.</dd></div>
+        <div><dt>My role</dt><dd>I redesigned the client and routing paths for incoming messages and outgoing commands.</dd></div>
+        <div><dt>Key decision</dt><dd>Use broker-side shared subscriptions for ingestion; use fanout only for a command that must reach the process holding the live socket.</dd></div>
+        <div><dt>Result</dt><dd>Adding a second instance no longer made each instance persist the same incoming data.</dd></div>
+      </dl>
+      <div class="prose">
+        <h3>What made the change non-trivial</h3>
+        <p>The two flows looked similar but had different ownership rules. Incoming telemetry is work that one consumer should handle. An outgoing command has to be sent through a specific process-local socket; the message broker cannot own that socket for the application.</p>
+        <h3>What I changed</h3>
+        <p>I moved incoming consumption to an MQTT shared subscription so the broker assigns a message to one eligible consumer. For commands, I published to a topic that all instances received. Each instance checked its local connection registry; only the instance that owned the socket sent the command.</p>
+        <h3>How I validated it</h3>
+        <p>I tested with multiple replicas and checked that incoming data had one persistence path while a command was sent only by the instance with the relevant connection.</p>
+        <p class="detail-note">Shared subscriptions remove the old duplicate-consumption behavior, but they do not create exactly-once processing. Connection changes and command acknowledgement remain separate design concerns.</p>
+        <details>
+          <summary>Decision record: distributed consumption is not socket ownership</summary>
+          <div class="note-body">
+            <h4>Failure mode</h4>
+            <p>Every replica subscribed to the same incoming topic. With a single pod that was invisible; with two pods, both persisted the same packet. The fault was consumer fanout, not a database race.</p>
+            <h4>Separate ownership models</h4>
+            <p>Telemetry is distributable work: one eligible consumer should process each delivery. A device command is different because the TCP socket exists only in the memory of one process. A shared store can identify an owner, but it cannot transfer the live socket object to another pod.</p>
+            <h4>Alternatives and trade-offs</h4>
+            <ul>
+              <li><strong>Application-side coordinator:</strong> possible, but it duplicated broker functionality for ingress and introduced another routing dependency.</li>
+              <li><strong>Central command process:</strong> simplified selection but created a new availability bottleneck and still needed to handle reconnect ownership.</li>
+              <li><strong>Fanout with local ownership check:</strong> each pod examines a command, but only the owner writes to its socket. This matched the existing process-local connection model.</li>
+            </ul>
+            <h4>Client-library verification</h4>
+            <p>The original client path dropped shared-subscription messages in a proof of concept. I checked a newer version of the same client family, confirmed the relevant limitation remained, and moved to a client that supported the subscription behavior required by the design.</p>
+            <h4>Guarantee boundary</h4>
+            <p>Shared subscriptions eliminate the old simultaneous fanout; they do not make processing exactly once. A stronger command guarantee would need explicit ownership discovery, reconnect handling, acknowledgement, and retry semantics.</p>
+          </div>
+        </details>
+      </div>
+    </article>
+
+<article id="cloud-cost" class="case">
       <p class="category">Cost investigation · AWS S3 / CloudTrail / Athena</p>
       <h2>Finding the queries behind rising S3 API costs</h2>
       <p class="outcome">A plausible first explanation turned out to be wrong. I attributed the requests to unused analytics schedules and reduced daily S3 API cost from about $138 to $6.</p>
@@ -247,17 +253,56 @@
         <h3>What I changed and verified</h3>
         <p>I stopped the unused schedules and compared the same daily S3 API cost signal afterward. The cost fell from about $138 to $6 per day. This result is intentionally scoped to S3 API requests, not the whole AWS bill.</p>
         <details>
-          <summary>Technical note: investigation sequence</summary>
+          <summary>Investigation record: attributing cost before changing infrastructure</summary>
           <div class="note-body">
-            <h4>Evidence order</h4>
+            <h4>Why the first hypothesis was rejected</h4>
+            <p>A crawler schedule was an intuitive suspect, and an early cost movement looked encouraging. Billing lag meant that observation was not causal evidence. I rechecked over a longer window before committing to a broader infrastructure change.</p>
+            <h4>Attribution path</h4>
             <ul>
-              <li>Identify the billing dimension that increased.</li>
-              <li>Attribute the request type and caller from audit records.</li>
-              <li>Connect the caller to a concrete workload and check whether it still had a consumer.</li>
-              <li>Apply the smallest change that removes the request source, then compare the same cost signal after the billing delay.</li>
+              <li>Isolate the S3 API dimension that increased.</li>
+              <li>Group audit events by request type and caller rather than guessing from a nearby service change.</li>
+              <li>Join the dominant caller back to query history and scheduled workloads.</li>
+              <li>Confirm whether each workload still had a consumer before optimizing it.</li>
             </ul>
-            <h4>Why stop rather than optimize</h4>
-            <p>Partitioning or narrowing the query range would reduce an active workload. These schedules were no longer used, so removing them eliminated the source instead of optimizing work with no product value.</p>
+            <h4>Decision criterion</h4>
+            <p>Partitioning or narrowing the query range would reduce an active workload. These schedules had no remaining consumer, so removing them was lower risk and removed the request source entirely. I then compared the same daily S3 API cost signal after the billing delay.</p>
+          </div>
+        </details>
+      </div>
+    </article>
+
+<article id="battery" class="case">
+      <p class="category">Telemetry processing · Kotlin / Redis</p>
+      <h2>Stabilizing battery-level readings while a vehicle is moving</h2>
+      <p class="outcome">A voltage-only battery reading dropped and rebounded under driving load. I implemented a state-aware filter that reduced the maximum visible drop during driving from 25 percentage points to about 6.</p>
+      <dl class="case-summary">
+        <div><dt>Situation</dt><dd>A noisy physical signal affected both a customer-facing value and a battery-replacement pricing rule.</dd></div>
+        <div><dt>My role</dt><dd>I tested the telemetry assumptions, implemented the filtering pipeline, and released it to production.</dd></div>
+        <div><dt>Key decision</dt><dd>Use a causal three-stage filter and separate the display value from the stopped-state value used for pricing.</dd></div>
+        <div><dt>Result</dt><dd>Maximum visible drop while driving improved from 25 percentage points to about 6.</dd></div>
+      </dl>
+      <div class="prose">
+        <h3>Context and investigation</h3>
+        <p>Battery level was derived linearly from terminal voltage. Driving load could lower voltage by 1–2 V, so the displayed level fell sharply and then recovered at a stop. Field data also showed that two assumptions were unreliable: helper packets were not always valid input, and speed zero did not always mean the vehicle had stopped.</p>
+        <h3>What I implemented</h3>
+        <p>The pipeline first clamped physically implausible values, then used a causal Hampel filter to reject local outliers without looking ahead in time, and finally applied an asymmetric EMA that responded differently while moving and stopped. Pricing used the latest stopped-state reading rather than a transient reading taken under load.</p>
+        <h3>Why this shape</h3>
+        <p>The filter had to run online, so it could not rely on future samples. Each stage owned a different problem—impossible values, isolated local spikes, and the response speed of a user-facing display—rather than hiding all behavior in one broad smoothing rule.</p>
+        <details>
+          <summary>Design record: a causal filter with separate responsibilities</summary>
+          <div class="note-body">
+            <h4>Why a causal pipeline</h4>
+            <p>The value was calculated online, so a filter that needs future samples was not available. The pipeline therefore used only the current and prior observations. Clamping rejected impossible values, the Hampel stage compared a local value against a robust neighborhood baseline, and the asymmetric EMA controlled how quickly the displayed value could move in each state.</p>
+            <h4>Options I ruled out</h4>
+            <ul>
+              <li><strong>Ignore a falling value while driving:</strong> stable-looking, but it could hide a real battery drop.</li>
+              <li><strong>Increase upload frequency:</strong> more samples did not correct a load-dependent measurement error and increased data volume.</li>
+              <li><strong>One symmetric moving average:</strong> simpler, but it lagged genuine changes and did not distinguish moving from stopped behavior.</li>
+            </ul>
+            <h4>Why display and pricing diverged</h4>
+            <p>A display can be smoothed for readability. Pricing needs a value that is defensible for the business rule. Reusing a transient moving-state voltage reading for both would couple two goals with different error costs, so pricing used the latest stopped-state reading instead.</p>
+            <h4>Verification</h4>
+            <p>I compared before-and-after driving traces, then separately checked the stopped-state value consumed by pricing. The target was not a smoother chart alone: it was a stable display without converting every low reading into an invalid sample.</p>
           </div>
         </details>
       </div>
@@ -265,8 +310,6 @@
 
     <section id="more-work" class="more-work">
       <h2>Additional work</h2>
-      <h3>Additional payment authorization</h3>
-      <p>For fare changes after an initial authorization, I designed a separate hold for only the additional amount because the provider could not increase the existing hold. A failure affected the incremental amount rather than putting the original ride payment at risk.</p>
       <h3>Device integration and query tuning</h3>
       <p>I built a mobile SDK that connected BLE devices to a server through a phone, extending a platform that had supported Wi-Fi devices. I also improved a reporting query by replacing nested subqueries with joins and changing its union structure.</p>
     </section>
