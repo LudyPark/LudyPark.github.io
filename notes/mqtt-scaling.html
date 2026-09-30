@@ -6,7 +6,7 @@
 <meta name="description" content="Case study: scaling MQTT ingestion and TCP command delivery across pods.">
 <title>Scaling MQTT ingestion without duplicating writes — Jaeeun Park</title>
 <link rel="icon" href="../favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="../notes.css?v=20261003"></head>
+<link rel="stylesheet" href="../notes.css?v=20261004"></head>
 <body>
 <div class="wrap">
 <nav class="site-nav" aria-label="Site navigation"><a class="brand" href="../index.html">Jaeeun Park</a>
@@ -78,7 +78,7 @@
 <p>The service had already been running two copies, which is why the duplicate writes were visible in the first place. Correct ingestion no longer depends on running exactly one replica: incoming device data is distributed across consumers instead of duplicated. For a currently connected device, the command intent is broadcast so that the pod holding the live TCP socket can send it. Shared subscriptions cover two MQTT clients and five topics in production.</p>
 <h2>7. What this does not solve</h2>
 <p>Shared subscriptions do not guarantee exactly-once database processing; reconnects can still cause loss or duplication depending on QoS, session, acknowledgement, and commit timing. Fan-out is a fast routing path for connected sockets, not durable command execution: commands issued during a reconnect window can be lost, stale mappings can survive a pod crash, and anonymous auto-delete queues are not a command store. Broker and RabbitMQ failures remain separate domains.</p>
-<p>The telemetry subscription used MQTT QoS 0, so shared subscriptions changed work distribution rather than delivery durability. Even QoS 1 or 2 would only strengthen the client-broker delivery contract; consumer idempotency would still be required around the database write. It can also fail silently, and unsupported shared-subscription behavior is broker- and version-dependent, so the system must detect both duplicate writes and missing deliveries rather than assuming a safe fallback. Recent per-device history also belongs outside pod memory; the battery estimator stores it in Redis.</p>
+<p>The telemetry subscription used MQTT QoS 0, so shared subscriptions changed work distribution rather than delivery durability. Even QoS 1 or 2 would only strengthen the client-broker delivery contract; consumer idempotency would still be required around the database write. The mechanism also rests on a topic-string convention that the broker and the client must read the same way, and a mismatch there surfaces as changed behavior rather than an error. That is how the client-library problem above stayed invisible until the data was checked, so duplicate device-data storage is worth monitoring directly. Recent per-device history also belongs outside pod memory; the battery estimator stores it in Redis.</p>
 <p class="note">Product and OSS names are shown; company names, internal topics, and host names are omitted.</p>
 <p class="note"><a href="../case-studies.html">← All selected work</a></p>
 </main>
