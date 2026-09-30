@@ -6,7 +6,7 @@
 <meta name="description" content="Case study: centralizing pull-request review policy across ten repositories and five technology stacks, with stack and change-category routing.">
 <title>Centralizing review policy across ten repositories — Jaeeun Park</title>
 <link rel="icon" href="../favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="../notes.css?v=20261004"></head>
+<link rel="stylesheet" href="../notes.css?v=20261005"></head>
 <body>
 <div class="wrap">
 <nav class="site-nav" aria-label="Site navigation"><a class="brand" href="../index.html">Jaeeun Park</a>
@@ -55,7 +55,7 @@
 <p>A review-rule change could be made once and distributed consistently instead of being copied across ten repositories. Stack- and change-specific routing also prevented SQL and migration risks from being flattened into generic application-code advice. I do not claim a measured reduction in review time because that outcome was not instrumented.</p>
 <h2>7. What this does not solve</h2>
 <p>Centralization moves the risk rather than removing it: an error in the central policy now propagates to every repository on the next sync. Versioning, staged rollout, and rollback are the controls that would bound that, and I am describing them as the next design step rather than as implemented safeguards. Misclassification remains possible, which is why the <code>unknown</code> fallback exists, and a wrong stack match still means the wrong criteria are applied. Effectiveness is also unmeasured: if I repeat this, the first instrumentation would be the adoption rate per finding type, so that categories which consistently lead to changes can be strengthened and categories that are routinely ignored can be removed.</p>
-<p class="note">Company names and internal repository identifiers are omitted.</p>
+<p class="note">Internal repository identifiers are omitted.</p>
 <p class="note"><a href="../case-studies.html">← All selected work</a></p>
 </main>
 <footer>© Jaeeun Park</footer>

@@ -6,7 +6,7 @@
 <meta name="description" content="Case study: filtering voltage-derived battery state in a live device-data service.">
 <title>Filtering battery state under driving load — Jaeeun Park</title>
 <link rel="icon" href="../favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="../notes.css?v=20261004"></head>
+<link rel="stylesheet" href="../notes.css?v=20261005"></head>
 <body>
 <div class="wrap">
 <nav class="site-nav" aria-label="Site navigation"><a class="brand" href="../index.html">Jaeeun Park</a>
@@ -76,7 +76,7 @@
 </ul>
 <h2>7. Result</h2>
 <p>On recorded voltage-trace simulations, the maximum displayed SOC drop in the affected driving pattern fell from about 25 percentage points to about 6 percentage points. This was a trace-based comparison, not a production A/B test, and it describes reduced displayed drop rather than improved state-of-charge accuracy. Voltage-only estimation cannot fully separate load sag from real charge movement: Coulomb counting was unavailable because packets contained no current measurement, and a Kalman filter would require a validated state model and covariance assumptions this path did not have. The swap price is fixed only at a stop, where the estimate has converged, and Redis fallback is still not observable in monitoring.</p>
-<p class="note">Company names and device-vendor details are omitted. Parameters above are from the production implementation.</p>
+<p class="note">Device-vendor details are omitted. Parameters above are from the production implementation.</p>
 <p class="note"><a href="../case-studies.html">← All selected work</a></p>
 </main>
 <footer>© Jaeeun Park</footer>

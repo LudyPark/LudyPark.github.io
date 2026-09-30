@@ -6,7 +6,7 @@
 <meta name="description" content="Case study: adding four payment methods to a one-tip-per-ride flow, with the contract change, the trade-offs, and a production report narrowed before it became a hotfix.">
 <title>Adding four payment methods without breaking one-tip-per-ride — Jaeeun Park</title>
 <link rel="icon" href="../favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="../notes.css?v=20261004"></head>
+<link rel="stylesheet" href="../notes.css?v=20261005"></head>
 <body>
 <div class="wrap">
 <nav class="site-nav" aria-label="Site navigation"><a class="brand" href="../index.html">Jaeeun Park</a>
@@ -88,7 +88,7 @@ CREATE UNIQUE INDEX ON tip_log (ride_id);</code></pre>
 <p>The database constraint prevents two successful tip records for one ride, but it does not by itself make every external gateway call exactly once. Callback loss still requires status lookup or reconciliation, and an idempotency key is only as strong as the boundary that enforces it.</p>
 <h2>7. Result</h2>
 <p>Four payment methods handle tips across two regions. Measured after the release, the flow has processed about 56,000 tips. That figure describes the volume carried by the resulting path, not individual productivity. The code every method shares also came out stronger: an explicit idempotency key in the payment contract, a completion check that no longer passes on empty results, and a wallet path that only reports money it actually moved.</p>
-<p class="note">Company, provider, and internal identifiers are omitted.</p>
+<p class="note">Payment-provider names and internal identifiers are omitted.</p>
 <p class="note"><a href="../case-studies.html">← All selected work</a></p>
 </main>
 <footer>© Jaeeun Park</footer>

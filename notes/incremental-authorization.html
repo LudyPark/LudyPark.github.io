@@ -6,7 +6,7 @@
 <meta name="description" content="Case study: incremental authorization for changed fares.">
 <title>Handling a fare increase after authorization — Jaeeun Park</title>
 <link rel="icon" href="../favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="../notes.css?v=20261004"></head>
+<link rel="stylesheet" href="../notes.css?v=20261005"></head>
 <body>
 <div class="wrap">
 <nav class="site-nav" aria-label="Site navigation"><a class="brand" href="../index.html">Jaeeun Park</a>
@@ -76,7 +76,7 @@
 </ul>
 <h2>7. Result</h2>
 <p>The flow was deployed to the Vietnam production region for destination changes and additional fees. For destination changes, the original authorization remains intact and the positive delta must be separately authorized before the change is accepted. This moved the recovery decision from settlement time to the point where the fare changed. It did not establish a measured improvement in bad-debt or collection rate. The 1,000 VND assumption was verified through the code-controlled fare components, while fixed-amount coupons and administrator-provided option fees remained operational constraints rather than universal code guarantees.</p>
-<p class="note">Company names and internal identifiers are omitted.</p>
+<p class="note">Internal identifiers and gateway configuration are omitted.</p>
 <p class="note"><a href="../case-studies.html">← All selected work</a></p>
 </main>
 <footer>© Jaeeun Park</footer>

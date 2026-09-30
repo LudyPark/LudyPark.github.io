@@ -6,7 +6,7 @@
 <meta name="description" content="Case study: diagnosing recurring pod restarts through thread-dump evidence.">
 <title>Tracing recurring pod restarts to transaction scope — Jaeeun Park</title>
 <link rel="icon" href="../favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="../notes.css?v=20261004"></head>
+<link rel="stylesheet" href="../notes.css?v=20261005"></head>
 <body>
 <div class="wrap">
 <nav class="site-nav" aria-label="Site navigation"><a class="brand" href="../index.html">Jaeeun Park</a>
@@ -81,7 +81,7 @@
 <p>If the DB commit succeeds and the process stops before alert delivery, an alert can be lost. That was acceptable for this monitoring side effect. Mandatory delivery would require an outbox row written in the same database transaction, a retrying worker, and an external idempotency boundary; that is a redesign option, not part of the incident fix. Increasing memory or the connection pool would only delay the same throughput collapse and would add pressure to the database's connection limit.</p>
 <h2>8. Result</h2>
 <p>Restarts stopped and memory settled around 2.4 GiB, close to where it sat before the incident. What matters more than the number is the shape of the fix. External reporting can slow down again without holding database connections, so the same HikariCP-exhaustion chain cannot recur. Slow reporting can still reduce end-to-end throughput and must be monitored separately.</p>
-<p class="note">Historical incident figures (3–5 minute restarts, 4→8→10 GiB, 33,745 ms accumulated CPU, 34 waiting threads, 8.5 seconds, and pool size 15) are from the investigation record at the time. Company identifiers are omitted.</p>
+<p class="note">Historical incident figures (3–5 minute restarts, 4→8→10 GiB, 33,745 ms accumulated CPU, 34 waiting threads, 8.5 seconds, and pool size 15) are from the investigation record at the time. Internal identifiers are omitted.</p>
 <p class="note"><a href="../case-studies.html">← All selected work</a></p>
 </main>
 <footer>© Jaeeun Park</footer>
