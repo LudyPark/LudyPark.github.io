@@ -14,12 +14,18 @@ pre code { color:inherit; font-size:inherit; }
 .kt-string { color:#f0c674; }
 .kt-comment { color:#8a9baa; font-style:italic; }
 .inline-code { padding:1px 4px; border:1px solid #e0e3e6; background:#f6f7f8; color:#30343a; font:0.9em ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+
+.pdr { display:grid; grid-template-columns:auto 1fr; gap:3px 9px; margin:0; }
+.pdr dt { color:var(--ink); font-weight:650; }
+.pdr dd { margin:0; }
 @media (max-width:620px) {
   .wrap { width:min(100% - 32px, 900px); }
   .site-nav { align-items:flex-start; }
   .nav-links { flex-wrap:wrap; justify-content:flex-end; row-gap:6px; }
   .case { grid-template-columns:1fr; gap:12px; }
   .metric { margin-top:0; }
+  .pdr { grid-template-columns:1fr; gap:1px; }
+  .pdr dt { margin-top:5px; }
   table { font-size:13px; }
   th, td { padding:10px; }
 }

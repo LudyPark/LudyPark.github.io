@@ -10,7 +10,7 @@
 <meta property="og:url" content="https://ludypark.github.io/">
 <title>Jaeeun Park — Backend Engineer</title>
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="notes.css?v=20261002"></head>
+<link rel="stylesheet" href="notes.css?v=20261003"></head>
 <body>
 <div class="wrap">
 <nav class="site-nav" aria-label="Site navigation"><a class="brand" href="index.html">Jaeeun Park</a>
@@ -19,7 +19,7 @@
 <main>
 <p class="eyebrow">Backend engineer · 5+ years</p>
 <h1>Jaeeun Park</h1>
-<p class="lede">I am a backend engineer who builds and operates production systems where correctness, failure handling, and observability matter. I work with Kotlin and Spring Boot on PostgreSQL transaction design, asynchronous state machines, MQTT and RabbitMQ delivery paths, Redis-backed cross-pod state, and JVM production debugging. When a symptom-level fix does not work, I go back and redefine the failure mechanism: recurring restarts that survived a memory increase were a transaction-scope problem, while rising S3 cost came from abandoned scheduled queries rather than storage.</p>
+<p class="lede">I build and operate production backend systems where correctness and failure handling matter, mostly in Kotlin and Spring Boot. The work below spans payments, production incidents, distributed messaging, cloud cost, and device data. What connects it is a habit: when a symptom-level fix does not hold, I go back and find the failure mechanism underneath.</p>
 <hr class="rule">
 <section class="case-list" aria-labelledby="selected-work">
 <h2 id="selected-work" class="section-intro">Selected work</h2>
@@ -27,7 +27,11 @@
 <div>
 <p class="tags">Payments</p>
 <h3><a href="notes/tipping-payment-flow.html">Adding four payment methods without breaking one-tip-per-ride</a></h3>
-<p><strong>Problem:</strong> Four payment methods had to enter an existing tip flow without violating the one-tip-per-ride invariant. <strong>Decision:</strong> Kept the database unique constraint as the final guard, separated idempotency from the ride reference, and handled synchronous capture and asynchronous callback completion explicitly. <strong>Result:</strong> Four methods now run across two regions, and three defects in the shared payment path were corrected.</p>
+<dl class="pdr">
+<dt>Problem</dt><dd>Four payment methods had to enter an existing tip flow without violating the one-tip-per-ride invariant.</dd>
+<dt>Decision</dt><dd>Kept the database unique constraint as the final guard, separated idempotency from the ride reference, and handled synchronous capture and asynchronous callback completion explicitly.</dd>
+<dt>Result</dt><dd>Four methods now run across two regions, and three defects in the shared payment path were corrected.</dd>
+</dl>
 </div>
 <p class="metric"><strong>4 payment methods</strong>two regions</p>
 </article>
@@ -35,7 +39,11 @@
 <div>
 <p class="tags">Payments</p>
 <h3><a href="notes/incremental-authorization.html">Handling a fare increase after authorization</a></h3>
-<p><strong>Problem:</strong> A destination change could raise the final fare without securing the increase before settlement. <strong>Decision:</strong> Preserved the original authorization and created a second hold only for the positive delta because MoMo could not increase an existing hold and the production AOF fee rate was zero. <strong>Result:</strong> The original hold remains intact, and a destination-change increase is now either separately authorized or the change is rejected. This moves the authorization boundary from settlement time to the destination-change decision; no collection-rate improvement was measured.</p>
+<dl class="pdr">
+<dt>Problem</dt><dd>A destination change could raise the final fare without securing the increase before settlement.</dd>
+<dt>Decision</dt><dd>Preserved the original authorization and created a second hold only for the positive delta because MoMo could not increase an existing hold and the production AOF fee rate was zero.</dd>
+<dt>Result</dt><dd>The original hold remains intact, and a destination-change increase is now either separately authorized or the change is rejected. This moves the authorization boundary from settlement time to the destination-change decision; no collection-rate improvement was measured.</dd>
+</dl>
 </div>
 <p class="metric"><strong>Authorization boundary</strong>settlement → destination change</p>
 </article>
@@ -43,7 +51,11 @@
 <div>
 <p class="tags">Reliability</p>
 <h3><a href="notes/oom-incident.html">Tracing recurring pod restarts to transaction scope</a></h3>
-<p><strong>Problem:</strong> A vehicle-data service restarted every three to five minutes even after its memory limit was doubled. <strong>Decision:</strong> Used accumulated thread CPU, transaction duration, and HikariCP waits to trace the failure to reflection-based alert serialization inside a database transaction. <strong>Result:</strong> External reporting moved outside the transaction; restarts stopped and container memory settled near 2.4 GiB.</p>
+<dl class="pdr">
+<dt>Problem</dt><dd>A vehicle-data service restarted every three to five minutes even after its memory limit was doubled.</dd>
+<dt>Decision</dt><dd>Used accumulated thread CPU, transaction duration, and HikariCP waits to trace the failure to reflection-based alert serialization inside a database transaction.</dd>
+<dt>Result</dt><dd>External reporting moved outside the transaction; restarts stopped and container memory settled near 2.4 GiB.</dd>
+</dl>
 </div>
 <p class="metric"><strong>~2.4 GiB</strong>stable container memory</p>
 </article>
@@ -51,7 +63,11 @@
 <div>
 <p class="tags">Distributed systems</p>
 <h3><a href="notes/mqtt-scaling.html">Scaling MQTT ingestion without duplicating writes</a></h3>
-<p><strong>Problem:</strong> A second replica duplicated MQTT writes, while TCP commands could reach a pod that did not own the target socket. <strong>Decision:</strong> Used MQTT shared subscriptions for inbound distribution and RabbitMQ fan-out for pod-local TCP connection ownership. <strong>Result:</strong> The service no longer depends on a single replica for correct ingestion, without claiming end-to-end exactly-once processing.</p>
+<dl class="pdr">
+<dt>Problem</dt><dd>A second replica duplicated MQTT writes, while TCP commands could reach a pod that did not own the target socket.</dd>
+<dt>Decision</dt><dd>Used MQTT shared subscriptions for inbound distribution and RabbitMQ fan-out for pod-local TCP connection ownership.</dd>
+<dt>Result</dt><dd>The service no longer depends on a single replica for correct ingestion, without claiming end-to-end exactly-once processing.</dd>
+</dl>
 </div>
 <p class="metric"><strong>Single-replica assumption removed</strong>inbound work distributed by broker</p>
 </article>
@@ -59,7 +75,11 @@
 <div>
 <p class="tags">Engineering enablement</p>
 <h3><a href="notes/review-policy.html">Centralizing review policy across ten repositories</a></h3>
-<p><strong>Problem:</strong> Review workflows and prompts were copied across ten repositories and five technology stacks, so each rule change risked omissions and policy drift. <strong>Decision:</strong> Centralized the policy, synchronized it to service repositories, and selected stack- and change-specific reviews, with dedicated SQL and migration paths. <strong>Result:</strong> One policy change could be distributed consistently; no review-time reduction is claimed because that outcome was not instrumented.</p>
+<dl class="pdr">
+<dt>Problem</dt><dd>Review workflows and prompts were copied across ten repositories and five technology stacks, so each rule change risked omissions and policy drift.</dd>
+<dt>Decision</dt><dd>Centralized the policy, synchronized it to service repositories, and selected stack- and change-specific reviews, with dedicated SQL and migration paths.</dd>
+<dt>Result</dt><dd>One policy change could be distributed consistently; no review-time reduction is claimed because that outcome was not instrumented.</dd>
+</dl>
 </div>
 <p class="metric"><strong>10 repositories</strong>5 technology stacks</p>
 </article>
@@ -67,7 +87,11 @@
 <div>
 <p class="tags">Cost and operations</p>
 <h3><a href="notes/s3-cost-investigation.html">Finding the workload behind an S3 API-cost spike</a></h3>
-<p><strong>Problem:</strong> S3 API cost reached $138 per day, but principal-based attribution pointed to the wrong workload. <strong>Decision:</strong> Re-aggregated CloudTrail by user agent and matched request windows with Athena execution IDs and scheduled SQL. <strong>Result:</strong> Five unused schedules were removed and S3 API cost fell to $6 per day.</p>
+<dl class="pdr">
+<dt>Problem</dt><dd>S3 API cost reached $138 per day, but principal-based attribution pointed to the wrong workload.</dd>
+<dt>Decision</dt><dd>Re-aggregated CloudTrail by user agent and matched request windows with Athena execution IDs and scheduled SQL.</dd>
+<dt>Result</dt><dd>Five unused schedules were removed and S3 API cost fell to $6 per day.</dd>
+</dl>
 </div>
 <p class="metric"><strong>$138 → $6 / day</strong>S3 API cost</p>
 </article>
@@ -75,7 +99,11 @@
 <div>
 <p class="tags">Algorithms and device data</p>
 <h3><a href="notes/battery-signal-filter.html">Filtering battery state under driving load</a></h3>
-<p><strong>Problem:</strong> Load-induced voltage sag could make a moving vehicle appear almost empty and distort battery-swap pricing. <strong>Decision:</strong> Combined a causal Hampel filter using median absolute deviation with an asymmetric EMA and confirmed-stop pricing rules. <strong>Result:</strong> Recorded-trace simulation reduced the maximum displayed drop from about 25 percentage points to about 6; this was not a production A/B measurement.</p>
+<dl class="pdr">
+<dt>Problem</dt><dd>Load-induced voltage sag could make a moving vehicle appear almost empty and distort battery-swap pricing.</dd>
+<dt>Decision</dt><dd>Combined a causal Hampel filter using median absolute deviation with an asymmetric EMA and confirmed-stop pricing rules.</dd>
+<dt>Result</dt><dd>Recorded-trace simulation reduced the maximum displayed drop from about 25 percentage points to about 6; this was not a production A/B measurement.</dd>
+</dl>
 </div>
 <p class="metric"><strong>25 pp → ~6 pp</strong>recorded-trace simulation</p>
 </article>
