@@ -3,206 +3,276 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Backend engineering work by Jaeeun Park: incident recovery, payment features, message processing, and cloud costs.">
+  <meta name="description" content="Selected backend engineering work by Jaeeun Park.">
   <title>Selected Work — Jaeeun Park</title>
-  <style>:root { color-scheme: light; --ink: #202020; --muted: #5d5d5d; --line: #dededb; --paper: #fff; }
-* { box-sizing: border-box; }
-html { scroll-padding-top: 28px; }
-body { margin: 0; background: var(--paper); color: var(--ink); font: 17px/1.75 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; -webkit-font-smoothing: antialiased; }
-a { color: inherit; text-decoration-thickness: 1px; text-underline-offset: 4px; }
-a:hover { text-decoration-thickness: 2px; }
-a:focus-visible, summary:focus-visible { outline: 2px solid #202020; outline-offset: 5px; }
-.wrap { width: min(920px, calc(100% - 80px)); margin-inline: auto; }
-.skip { position: absolute; top: -100px; left: 20px; background: white; padding: 8px; }
-.skip:focus { top: 8px; }
-.site-nav { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding-block: 24px; border-bottom: 1px solid var(--line); font-size: 14px; line-height: 1.5; }
-.site-nav .name { font-weight: 650; text-decoration: none; }
-.nav-links { display: flex; flex-wrap: wrap; gap: 10px 24px; }
-.nav-links a { text-decoration: none; }
-.nav-links a:hover { text-decoration: underline; }
-h1, h2, h3, p, ul, ol, dl, figure { margin-top: 0; }
-h1, h2, h3 { font-weight: 600; text-wrap: balance; }
-h1 { margin-bottom: 18px; font-size: clamp(34px, 4.5vw, 44px); line-height: 1.2; letter-spacing: -.025em; }
-h2 { font-size: 27px; line-height: 1.35; letter-spacing: -.018em; }
-h3 { font-size: 19px; line-height: 1.45; letter-spacing: -.008em; }
-p { margin-bottom: 18px; }
-.intro { padding: 52px 0 36px; max-width: 740px; }
-.role { margin-bottom: 12px; color: var(--muted); font-size: 15px; }
-.intro .lead { margin-bottom: 18px; font-size: 19px; line-height: 1.7; }
-.stack { color: var(--muted); font-size: 14px; line-height: 1.8; margin-bottom: 0; }
-.work-list { border-top: 1px solid var(--line); }
-.section-title { margin: 0; padding: 26px 0 12px; font-size: 17px; }
-.work-row { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 28px; padding: 26px 0 30px; border-bottom: 1px solid var(--line); }
-.work-row h3 { margin-bottom: 9px; font-size: 22px; }
-.work-row h3 a { text-decoration: none; }
-.work-row h3 a:hover { text-decoration: underline; }
-.work-row p { margin-bottom: 10px; }
-.work-row .category { color: var(--muted); font-size: 14px; padding-top: 4px; }
-.work-row .read { font-size: 14px; }
-.experience { padding: 40px 0 28px; }
-.experience h2, .contact h2 { font-size: 22px; margin-bottom: 18px; }
-.experience dl { margin-bottom: 0; }
-.experience dt { font-weight: 600; margin-top: 20px; }
-.experience dd { margin: 5px 0 0; max-width: 740px; color: #444; }
-.contact { padding: 28px 0 38px; }
-.contact p { display: flex; flex-wrap: wrap; gap: 10px 24px; margin-bottom: 0; font-size: 15px; }
-footer { border-top: 1px solid var(--line); padding: 20px 0 28px; color: var(--muted); font-size: 13px; }
-.case-intro { padding-bottom: 25px; }
-.case-intro p { max-width: 690px; }
-.contents { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 22px 0; margin-bottom: 0; }
-.contents p { margin-bottom: 10px; font-size: 14px; font-weight: 600; }
-.contents ol { margin: 0; padding-left: 22px; columns: 2; column-gap: 40px; font-size: 15px; }
-.contents li { margin: 5px 0; break-inside: avoid; }
-.case { padding: 52px 0; border-bottom: 1px solid var(--line); }
-.case-head { max-width: 750px; }
-.case-head .category { color: var(--muted); font-size: 14px; margin-bottom: 8px; }
-.case-head h2 { margin-bottom: 14px; font-size: 30px; }
-.case-head .outcome { margin-bottom: 24px; font-size: 18px; line-height: 1.7; }
-.prose { max-width: 710px; }
-.prose h3 { margin: 30px 0 10px; }
-.prose p { margin-bottom: 17px; }
-.prose ul { padding-left: 23px; margin-bottom: 20px; }
-.prose li { padding-left: 3px; margin: 8px 0; }
-.decision-list { margin: 20px 0; border-top: 1px solid var(--line); }
-.decision-list > div { display: grid; grid-template-columns: 185px minmax(0, 1fr); gap: 20px; padding: 16px 0; border-bottom: 1px solid var(--line); }
-.decision-list dt { font-weight: 600; }
-.decision-list dd { margin: 0; }
-.detail-note { border-left: 2px solid #999; padding-left: 18px; margin: 25px 0; color: #4b4b4b; font-size: 15px; }
-.case-back { display: inline-block; margin-top: 24px; font-size: 14px; }
-.short-work { padding: 40px 0; }
-.short-work h2 { font-size: 23px; margin-bottom: 24px; }
-.short-work h3 { margin: 28px 0 9px; }
-.scope-note { margin: 35px 0; max-width: 710px; color: var(--muted); font-size: 14px; }
-@media (max-width: 640px) {
-  body { font-size: 16px; line-height: 1.75; }
-  .wrap { width: calc(100% - 40px); }
-  .site-nav { padding-block: 20px; gap: 16px; align-items: baseline; }
-  .nav-links { gap: 8px 16px; }
-  .intro { padding: 35px 0 28px; }
-  .intro .lead { font-size: 18px; }
-  .work-row { grid-template-columns: 1fr; gap: 5px; padding: 23px 0 26px; }
-  .work-row .category { padding: 0; margin: 0; }
-  .work-row h3 { font-size: 21px; }
-  .contents ol { columns: 1; }
-  .contents li { margin: 9px 0; }
-  .case { padding: 38px 0; }
-  .case-head h2 { font-size: 26px; }
-  .case-head .outcome { font-size: 17px; }
-  .decision-list > div { grid-template-columns: 1fr; gap: 6px; }
-  .contact p { gap: 12px 20px; }
-}
-@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
-@media print {
-  .wrap { width: 100%; }
-  body { font-size: 11pt; }
-  .nav-links, .skip, .case-back { display: none; }
-  .intro, .case { padding-block: 20px; }
-  h2, h3 { break-after: avoid; }
-  a { text-decoration: none; }
-}
-</style>
+  <style>
+    :root { color-scheme: light; --ink:#202020; --muted:#626262; --line:#dededb; --paper:#fff; }
+    * { box-sizing:border-box; }
+    html { scroll-padding-top:28px; }
+    body { margin:0; background:var(--paper); color:var(--ink); font:17px/1.75 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; -webkit-font-smoothing:antialiased; }
+    a { color:inherit; text-decoration-thickness:1px; text-underline-offset:4px; }
+    a:hover { text-decoration-thickness:2px; }
+    a:focus-visible, summary:focus-visible { outline:2px solid var(--ink); outline-offset:5px; }
+    .wrap { width:min(920px,calc(100% - 80px)); margin-inline:auto; }
+    .skip { position:absolute; top:-100px; left:20px; background:#fff; padding:8px; }
+    .skip:focus { top:8px; }
+    .site-nav { display:flex; align-items:center; justify-content:space-between; gap:20px; padding:24px 0; border-bottom:1px solid var(--line); font-size:14px; line-height:1.5; }
+    .site-nav .name { font-weight:650; text-decoration:none; }
+    .nav-links { display:flex; flex-wrap:wrap; gap:10px 24px; }
+    .nav-links a { text-decoration:none; }
+    .nav-links a:hover { text-decoration:underline; }
+    h1,h2,h3,h4,p,ul,ol,dl { margin-top:0; }
+    h1,h2,h3 { font-weight:600; text-wrap:balance; }
+    h1 { margin-bottom:18px; font-size:clamp(34px,4.5vw,44px); line-height:1.2; letter-spacing:-.025em; }
+    h2 { font-size:30px; line-height:1.3; letter-spacing:-.018em; }
+    h3 { margin:30px 0 10px; font-size:19px; line-height:1.45; letter-spacing:-.008em; }
+    h4 { margin:24px 0 8px; font-size:16px; line-height:1.5; }
+    p { margin-bottom:18px; }
+    .intro { max-width:730px; padding:52px 0 32px; }
+    .role { margin-bottom:12px; color:var(--muted); font-size:15px; }
+    .lead { margin-bottom:18px; font-size:19px; line-height:1.7; }
+    .stack { margin:0; color:var(--muted); font-size:14px; }
+    .contents { margin:0; padding:21px 0; border-top:1px solid var(--line); border-bottom:1px solid var(--line); }
+    .contents p { margin:0 0 8px; font-size:14px; font-weight:600; }
+    .contents ol { margin:0; padding-left:22px; columns:2; column-gap:48px; }
+    .contents li { break-inside:avoid; margin:4px 0; }
+    .case { padding:58px 0; border-bottom:1px solid var(--line); }
+    .case:last-of-type { border-bottom:0; }
+    .category { margin-bottom:11px; color:var(--muted); font-size:14px; }
+    .outcome { max-width:710px; margin-bottom:25px; font-size:18px; line-height:1.7; }
+    .case-summary { max-width:710px; margin:0 0 32px; border-top:1px solid var(--line); }
+    .case-summary > div { display:grid; grid-template-columns:150px minmax(0,1fr); gap:22px; padding:13px 0; border-bottom:1px solid var(--line); }
+    .case-summary dt { color:var(--muted); font-size:14px; }
+    .case-summary dd { margin:0; }
+    .prose { max-width:710px; }
+    .prose ul { margin:0 0 20px; padding-left:22px; }
+    .prose li { margin:7px 0; }
+    .detail-note { margin:24px 0; padding-left:18px; border-left:2px solid #999; color:#4b4b4b; font-size:15px; }
+    details { max-width:710px; margin-top:28px; border-top:1px solid var(--line); border-bottom:1px solid var(--line); }
+    summary { cursor:pointer; padding:16px 26px 16px 0; list-style:none; font-weight:600; }
+    summary::-webkit-details-marker { display:none; }
+    summary::after { content:"+"; float:right; color:var(--muted); font-size:22px; font-weight:400; line-height:.9; }
+    details[open] summary::after { content:"−"; }
+    .note-body { padding:2px 0 4px; }
+    .note-body p { font-size:16px; }
+    .more-work { padding:44px 0; }
+    .more-work h2 { margin-bottom:22px; font-size:23px; }
+    .more-work h3 { margin-top:26px; }
+    .scope-note { max-width:710px; margin:0 0 32px; color:var(--muted); font-size:14px; }
+    .contact { padding:0 0 38px; }
+    .contact p { display:flex; flex-wrap:wrap; gap:10px 24px; margin:0; font-size:15px; }
+    footer { border-top:1px solid var(--line); padding:20px 0 28px; color:var(--muted); font-size:13px; }
+    @media (max-width:640px) { body{font-size:16px;line-height:1.75}.wrap{width:calc(100% - 40px)}.site-nav{align-items:flex-start;flex-direction:column;padding:19px 0}.intro{padding:39px 0 28px}.contents ol{columns:1}.case{padding:40px 0}.case-summary>div{grid-template-columns:1fr;gap:3px}h2{font-size:26px}.outcome{font-size:17px} }
+  </style>
 </head>
 <body>
-  <a class="skip" href="#main">Skip to content</a>
-  <div class="wrap">
-    <nav class="site-nav" aria-label="Main navigation"><a class="name" href="./">Jaeeun Park</a><div class="nav-links"><a href="./">Home</a><a href="./#contact">Contact</a></div></nav>
-    <main id="main">
-      <header class="intro case-intro"><h1>Selected work</h1><p>Problems I worked on in production, the changes I made, and what happened after release.</p></header>
-      <nav id="contents" class="contents" aria-label="Case studies"><p>On this page</p><ol>
+  <a class="skip" href="#content">Skip to content</a>
+  <header class="wrap site-nav">
+    <a class="name" href="index.html">Jaeeun Park</a>
+    <nav class="nav-links" aria-label="Primary"><a href="index.html">About</a><a href="case-studies.html" aria-current="page">Selected work</a><a href="mailto:jjomang7602@gmail.com">Email</a></nav>
+  </header>
+  <main id="content" class="wrap">
+    <section class="intro">
+      <p class="role">Backend engineer · Kotlin / Spring Boot</p>
+      <h1>Selected engineering work</h1>
+      <p class="lead">A few examples of production problems and product work: the context, the scope I owned, the decision I made, and how I checked the result.</p>
+      <p class="stack">Kotlin · Spring Boot · PostgreSQL · AWS · Kubernetes · MQTT · Redis</p>
+    </section>
+
+    <nav class="contents" aria-label="Case studies">
+      <p>On this page</p>
+      <ol>
+        <li><a href="#messaging">Message processing across instances</a></li>
         <li><a href="#reliability">Repeated out-of-memory restarts</a></li>
-        <li><a href="#payments">Tipping payments</a></li>
-        <li><a href="#mobility">Message processing across instances</a></li>
-        <li><a href="#cloud-cost">S3 API costs</a></li>
-        <li><a href="#more-work">Other work</a></li>
-      </ol></nav>
+        <li><a href="#battery">Battery-level signal stability</a></li>
+        <li><a href="#payments">Tipping payment flows</a></li>
+        <li><a href="#cloud-cost">S3 API cost investigation</a></li>
+      </ol>
+    </nav>
 
-      <article id="reliability" class="case">
-        <header class="case-head"><p class="category">Incident investigation · Kotlin / Spring Boot</p><h2>Stopping repeated out-of-memory restarts</h2><p class="outcome">I reduced repeated alert work and moved external reporting out of the database transaction. Memory use settled and the service stopped restarting from OOM.</p></header>
-        <div class="prose">
-          <h3>What was happening</h3>
-          <p>A service kept running out of memory after deployment. Giving it more memory did not stop the growth. CPU use rose before memory, so I started by looking at the work the service was doing.</p>
-          <h3>What I found</h3>
-          <p>When two sources of device data disagreed, each incoming packet generated another alert for the same unresolved condition. The error-reporting SDK repeatedly serialized the attached data. Thread dumps helped me locate that work.</p>
-          <p>The alert work was inside a database transaction. Slow reporting kept transactions open longer, increased pressure on the connection pool, and left more incoming work waiting.</p>
-          <h3>What I changed</h3>
-          <p>I reduced how often the same unresolved condition could trigger an alert. I also moved external alert reporting outside the transaction so it no longer extended the database work.</p>
-          <h3>Result and limit</h3>
-          <p>After the change, memory use stabilized and the OOM restarts stopped. The fix addressed the repeated work and its transaction boundary.</p>
-          <p class="detail-note">This change did not guarantee alert delivery after a database commit. A process failure in between could lose an alert. Guaranteed delivery would need a durable handoff, such as an outbox; that was not part of this fix.</p>
-        </div>
-        <a class="case-back" href="#contents">Back to contents</a>
-      </article>
+    <article id="messaging" class="case">
+      <p class="category">Message processing · MQTT / Kubernetes</p>
+      <h2>Making message processing work across service instances</h2>
+      <p class="outcome">When a service moved from one pod to two, both pods wrote the same incoming device data. I separated incoming work distribution from live-connection ownership so the service could scale without duplicate writes.</p>
+      <dl class="case-summary">
+        <div><dt>Situation</dt><dd>One service ingested device messages and also held TCP connections used to send commands. With two replicas, one message was processed twice.</dd></div>
+        <div><dt>My role</dt><dd>I redesigned the client and routing paths for incoming messages and outgoing commands.</dd></div>
+        <div><dt>Key decision</dt><dd>Use broker-side shared subscriptions for ingestion; use fanout only for a command that must reach the process holding the live socket.</dd></div>
+        <div><dt>Result</dt><dd>Adding a second instance no longer made each instance persist the same incoming data.</dd></div>
+      </dl>
+      <div class="prose">
+        <h3>What made the change non-trivial</h3>
+        <p>The two flows looked similar but had different ownership rules. Incoming telemetry is work that one consumer should handle. An outgoing command has to be sent through a specific process-local socket; the message broker cannot own that socket for the application.</p>
+        <h3>What I changed</h3>
+        <p>I moved incoming consumption to an MQTT shared subscription so the broker assigns a message to one eligible consumer. For commands, I published to a topic that all instances received. Each instance checked its local connection registry; only the instance that owned the socket sent the command.</p>
+        <h3>How I validated it</h3>
+        <p>I tested with multiple replicas and checked that incoming data had one persistence path while a command was sent only by the instance with the relevant connection.</p>
+        <p class="detail-note">Shared subscriptions remove the old duplicate-consumption behavior, but they do not create exactly-once processing. Connection changes and command acknowledgement remain separate design concerns.</p>
+        <details>
+          <summary>Technical note: distribution and connection ownership</summary>
+          <div class="note-body">
+            <h4>Why the original approach failed</h4>
+            <p>Every replica subscribed to the same incoming topic. That was fine with one pod, but two replicas each received and saved the same packet. The visible data duplication was a symptom of consumer fanout, not a database issue.</p>
+            <h4>Alternatives I considered</h4>
+            <ul>
+              <li><strong>Keep application-level distribution:</strong> possible, but it retained an unnecessary coordinator for work that the broker already distributes.</li>
+              <li><strong>Route commands through one central process:</strong> it simplified command selection but added another availability bottleneck and still did not solve socket ownership after reconnects.</li>
+              <li><strong>Use a shared subscription for both directions:</strong> correct for ingestion, wrong for commands because only one process can use a given local socket.</li>
+            </ul>
+            <h4>Client-library decision</h4>
+            <p>The existing integration did not reliably receive shared-subscription messages in a proof of concept. I evaluated a newer version of the same client family, found the same underlying limitation for this path, and changed the MQTT integration to a client that supported the required subscription behavior.</p>
+            <h4>Remaining boundary</h4>
+            <p>For a command that needs a stronger delivery guarantee, the next design would need explicit ownership discovery, connection-change handling, acknowledgement, and retry semantics. Those were not implied by distributing messages across pods.</p>
+          </div>
+        </details>
+      </div>
+    </article>
 
-      <article id="payments" class="case">
-        <header class="case-head"><p class="category">Feature development · Kotlin / Spring Boot</p><h2>Adding tips across different payment flows</h2><p class="outcome">I designed and implemented the backend payment flow for tipping and rolled it out across supported regions.</p></header>
-        <div class="prose">
-          <h3>The requirement</h3>
-          <p>A rider could add a tip before or after the fare was charged. Payment providers supported different ways to hold, capture, and confirm funds. A tip could also use a different payment method from the fare.</p>
-          <h3>How I split the flow</h3>
-          <p>I chose the payment path based on timing and payment method. Capture is the step that collects a previously authorized amount.</p>
-          <dl class="decision-list">
-            <div><dt>Before fare capture</dt><dd>Include the tip in the final fare capture when it uses the same payment method and the provider supports that path.</dd></div>
-            <div><dt>After fare capture</dt><dd>Create a separate tip transaction because the fare has already been collected.</dd></div>
-            <div><dt>Different payment method</dt><dd>Create a separate transaction using the selected method.</dd></div>
-            <div><dt>Waiting for a callback</dt><dd>Keep the transaction in a processing state until the provider confirms the result.</dd></div>
-          </dl>
-          <h3>Duplicate requests and fees</h3>
-          <p>I used a per-ride idempotency key and a distributed lock to prevent repeated or overlapping requests from creating duplicate tip charges. The key identified the same operation; the lock controlled concurrent processing.</p>
-          <p>When the tip and fare were collected together, I excluded the tip from the platform-fee calculation. I also recorded the payment fee for the tip separately.</p>
-          <h3>Result</h3>
-          <p>The feature reached production across the supported regions. It handled both combined and separate payments, with fee records that kept tips distinct from the fare.</p>
-          <h3>Related work: fare increases during a ride</h3>
-          <p>For a provider that could not increase an existing payment hold, I compared replacing the full hold with adding a second hold for the extra fare. I implemented the second option and captured the holds separately at ride completion. Keeping the original hold in place limited the amount at risk to the fare increase.</p>
-        </div>
-        <a class="case-back" href="#contents">Back to contents</a>
-      </article>
+    <article id="reliability" class="case">
+      <p class="category">Incident investigation · Kotlin / Spring Boot</p>
+      <h2>Stopping repeated out-of-memory restarts</h2>
+      <p class="outcome">A service restarted from OOM every 3–5 minutes. Increasing memory did not help. I traced the repeating work, changed the transaction boundary, and the service stabilized at about 2.4 GB.</p>
+      <dl class="case-summary">
+        <div><dt>Situation</dt><dd>Memory continued growing beyond 10 GB after a deployment, even after increasing the allocated memory.</dd></div>
+        <div><dt>My role</dt><dd>I investigated the runtime behavior and implemented the error-handling change.</dd></div>
+        <div><dt>Key decision</dt><dd>Reduce repeated reporting work and move an external error-reporting call out of the database transaction.</dd></div>
+        <div><dt>Result</dt><dd>The 3–5 minute restart loop stopped; steady memory was about 2.4 GB.</dd></div>
+      </dl>
+      <div class="prose">
+        <h3>Diagnosis</h3>
+        <p>Resource size was not the cause: after the limit increased from 4 GB to 8 GB, memory still grew past 10 GB. A thread dump showed an error-reporting SDK recursively serializing attachment objects through reflection, with one path consuming CPU for tens of seconds.</p>
+        <p>That SDK call ran inside a transaction. The transaction grew from roughly 10 seconds to 30–40 seconds, which exhausted the connection pool. Incoming messages then waited in memory while the same failure path continued to create reporting work.</p>
+        <h3>What I changed</h3>
+        <p>I first reduced repeated reporting for the unresolved condition, then moved the external call outside the transaction. This shortened the transactional critical section and stopped coupling database connections to a slow third-party serialization path.</p>
+        <h3>How I checked the result</h3>
+        <p>After release, I watched for the previous restart pattern and memory growth rather than treating a successful deployment as proof. The restart loop did not return and the service settled at about 2.4 GB.</p>
+        <p class="detail-note">This fix did not make alert delivery durable after commit. A transactional outbox would be a separate improvement if delivery had to survive a process failure between the database commit and the external call.</p>
+        <details>
+          <summary>Technical note: separating symptom from cause</summary>
+          <div class="note-body">
+            <h4>Signals I used</h4>
+            <ul>
+              <li>Memory-limit changes did not change the growth pattern.</li>
+              <li>Thread dumps showed long CPU time in error-report object serialization.</li>
+              <li>Slow external work extended transactions and made the connection pool the next bottleneck.</li>
+            </ul>
+            <h4>Why I did not stop at “increase memory”</h4>
+            <p>More memory only delayed the restart while the same reporting work and blocked transactions accumulated. I chose the narrower change that removed the observed amplifier instead of tuning the symptom.</p>
+            <h4>Why the external call moved</h4>
+            <p>The database transaction should protect the database update, not wait on a third-party SDK whose latency and object traversal are outside its control. Moving it out reduced the time that a pooled database connection was held.</p>
+          </div>
+        </details>
+      </div>
+    </article>
 
-      <article id="mobility" class="case">
-        <header class="case-head"><p class="category">Message processing · MQTT / Kubernetes</p><h2>Making message processing work across service instances</h2><p class="outcome">I changed how incoming messages and outgoing commands were distributed. Adding instances no longer caused each instance to write the same incoming data.</p></header>
-        <div class="prose">
-          <h3>Why adding instances failed</h3>
-          <p>The service had two problems. Every instance received the same incoming MQTT messages, which caused duplicate database writes. Outgoing device commands could also reach an instance that did not hold the device's live connection.</p>
-          <h3>Incoming messages</h3>
-          <p>I moved incoming work to MQTT shared subscriptions so the broker could distribute messages across consumers. During a local proof of concept, the existing client path lost shared-subscription messages. I found that the newer library versions still used the same underlying client, so I replaced the MQTT integration with the HiveMQ client.</p>
-          <h3>Outgoing commands</h3>
-          <p>The live connection belonged to one service instance. A shared lookup could identify a connection, but it could not make the connection object available in another process.</p>
-          <p>I used a broadcast path for commands. Each instance received the command, and only the instance holding the connection sent it to the device. Incoming data and outgoing commands therefore used different distribution rules.</p>
-          <h3>Result and trade-off</h3>
-          <p>The changes removed duplicate writes caused by every instance processing the same incoming message. The service could share incoming work across instances on Kubernetes while still sending commands through the instance that held the connection.</p>
-          <p class="detail-note">Broadcasting makes every instance inspect each command, so that work grows with the number of instances. Shared subscriptions also do not guarantee exactly-once processing. These are separate limits from the duplicate delivery caused by the old subscription setup.</p>
-        </div>
-        <a class="case-back" href="#contents">Back to contents</a>
-      </article>
+    <article id="battery" class="case">
+      <p class="category">Telemetry processing · Kotlin / Redis</p>
+      <h2>Stabilizing battery-level readings while a vehicle is moving</h2>
+      <p class="outcome">A voltage-only battery reading dropped and rebounded under driving load. I implemented a state-aware filter that reduced the maximum visible drop during driving from 25 percentage points to about 6.</p>
+      <dl class="case-summary">
+        <div><dt>Situation</dt><dd>A noisy physical signal affected both a customer-facing value and a battery-replacement pricing rule.</dd></div>
+        <div><dt>My role</dt><dd>I tested the telemetry assumptions, implemented the filtering pipeline, and released it to production.</dd></div>
+        <div><dt>Key decision</dt><dd>Use a causal three-stage filter and separate the display value from the stopped-state value used for pricing.</dd></div>
+        <div><dt>Result</dt><dd>Maximum visible drop while driving improved from 25 percentage points to about 6.</dd></div>
+      </dl>
+      <div class="prose">
+        <h3>Context and investigation</h3>
+        <p>Battery level was derived linearly from terminal voltage. Driving load could lower voltage by 1–2 V, so the displayed level fell sharply and then recovered at a stop. Field data also showed that two assumptions were unreliable: helper packets were not always valid input, and speed zero did not always mean the vehicle had stopped.</p>
+        <h3>What I implemented</h3>
+        <p>The pipeline first clamped physically implausible values, then used a causal Hampel filter to reject local outliers without looking ahead in time, and finally applied an asymmetric EMA that responded differently while moving and stopped. Pricing used the latest stopped-state reading rather than a transient reading taken under load.</p>
+        <h3>Why this shape</h3>
+        <p>The filter had to run online, so it could not rely on future samples. Each stage owned a different problem—impossible values, isolated local spikes, and the response speed of a user-facing display—rather than hiding all behavior in one broad smoothing rule.</p>
+        <details>
+          <summary>Technical note: alternatives and trade-offs</summary>
+          <div class="note-body">
+            <h4>Options I ruled out</h4>
+            <ul>
+              <li><strong>Ignore a falling value while driving:</strong> stable-looking, but it could hide a real battery drop.</li>
+              <li><strong>Increase upload frequency:</strong> more samples did not correct a load-dependent measurement error and increased data volume.</li>
+              <li><strong>Use a symmetric moving average:</strong> simpler, but it lagged genuine changes and did not distinguish moving from stopped behavior.</li>
+            </ul>
+            <h4>Verification</h4>
+            <p>I compared before-and-after driving data, then separately checked the stopped-state reading used by the pricing flow. The target was not simply a smoother chart: it was a stable display without treating every low reading as invalid or reusing a moving-state reading for pricing.</p>
+          </div>
+        </details>
+      </div>
+    </article>
 
-      <article id="cloud-cost" class="case">
-        <header class="case-head"><p class="category">Cost investigation · AWS S3 / CloudTrail / Athena</p><h2>Finding the queries behind rising S3 costs</h2><p class="outcome">I traced repeated storage requests to unused analytics schedules. Removing those schedules reduced recurring S3 API costs.</p></header>
-        <div class="prose">
-          <h3>The first lead</h3>
-          <p>List requests to a data-lake bucket had become expensive. A change to the data crawler looked like a possible explanation, but delayed billing made it hard to tell whether that change had helped.</p>
-          <h3>How I checked it</h3>
-          <p>I grouped CloudTrail records by user agent to see which tool made the requests. Athena accounted for most of them. I then compared query execution history with the request spikes and traced the activity back to scheduled dashboard queries.</p>
-          <h3>What I changed</h3>
-          <p>The schedules were no longer used, but they still scanned broad partition ranges. I stopped the unused schedules and checked the daily S3 API cost afterward. The cost fell.</p>
-          <p>The scope of this result was S3 API requests. It was not a reduction of the whole AWS bill.</p>
-        </div>
-        <a class="case-back" href="#contents">Back to contents</a>
-      </article>
+    <article id="payments" class="case">
+      <p class="category">Feature delivery · Kotlin / Spring Boot</p>
+      <h2>Adding tips across different payment flows</h2>
+      <p class="outcome">I implemented the backend payment paths for tipping, including the different provider operations required before and after the main ride payment.</p>
+      <dl class="case-summary">
+        <div><dt>Situation</dt><dd>One product action could be included with the main payment or need a separate provider operation, depending on timing and payment method.</dd></div>
+        <div><dt>My role</dt><dd>I owned the server-side payment paths, provider callback handling, and release support.</dd></div>
+        <div><dt>Key decision</dt><dd>Model timing, duplicate requests, provider confirmation, and accounting records as separate concerns.</dd></div>
+        <div><dt>Result</dt><dd>The feature was released across supported regions with distinct fare and tip records.</dd></div>
+      </dl>
+      <div class="prose">
+        <h3>The decision was not simply “charge a tip”</h3>
+        <p>If a user added a tip before the main payment was finalized, it could be included in that path. If the main payment had already completed, the tip required a separate provider operation. The backend had to select the correct path, avoid duplicate charges, and preserve a clear financial record.</p>
+        <h3>What I implemented</h3>
+        <p>I added the state checks and provider paths for both timing cases. A short-lived distributed lock reduced concurrent duplicate requests, while a database uniqueness constraint remained the final guard. Tip amounts and fees were recorded separately from the fare so later lookup and settlement did not have to infer their meaning from one combined amount.</p>
+        <h3>What this demonstrates</h3>
+        <p>For a payment feature, the visible UI action is only the start. The backend design has to state which operation is allowed in each state, what happens after an uncertain provider response, and where duplicate prevention ends.</p>
+        <details>
+          <summary>Technical note: duplicate prevention and state boundaries</summary>
+          <div class="note-body">
+            <h4>Why two layers were used</h4>
+            <p>A distributed lock reduces the chance that concurrent requests reach the provider together. It is not a permanent correctness boundary: locks can expire and processes can fail. The database constraint is the durable last line of defense for records that must not be created twice.</p>
+            <h4>Provider confirmation</h4>
+            <p>A request timeout does not prove that the provider did not process a payment. The flow therefore treats provider outcome and local persistence as separate states, and reconciliation or status lookup is needed when the response is uncertain.</p>
+            <h4>Accounting choice</h4>
+            <p>Keeping tips separate from the ride fare made fee calculation and later support investigation explicit. It avoided treating a business distinction as a parsing problem in downstream queries.</p>
+          </div>
+        </details>
+      </div>
+    </article>
 
-      <section id="more-work" class="short-work prose" aria-labelledby="more-title">
-        <h2 id="more-title">Other work</h2>
-        <h3>Improving battery-level readings</h3>
-        <p>I used field data to investigate large drops in the displayed battery level while driving. I removed cached helper packets from the measurements, used movement history to detect stops, and applied filtering suited to driving and stopped states. The display became more stable, and pricing used the latest stopped-state reading.</p>
-        <h3>Building operations tools and mobile features</h3>
-        <p>I built GraphQL APIs and admin screens for vehicle assignment and lifecycle management. I also maintained a React Native driver app, added promotion and pricing features, and kept its build and release pipeline running.</p>
-        <h3>Maintaining shared review tools</h3>
-        <p>I built a GitHub Actions workflow to keep review configuration in sync across repositories. Review prompts followed the repository's stack and the type of change, with separate checks for SQL and database migrations.</p>
-        <h3>Earlier work: device integration and query tuning</h3>
-        <p>I built a mobile SDK that connected BLE devices to the server through a phone, extending a platform that had only supported Wi-Fi devices. I also improved a slow reporting query by replacing nested subqueries with joins and changing its union structure.</p>
-      </section>
-      <p class="scope-note">These accounts are based on my work. Company names, internal identifiers, and private figures are omitted.</p>
-      <section class="contact" aria-label="Contact"><p><a href="mailto:jjomang7602@gmail.com">Email</a><a href="https://www.linkedin.com/in/ludy-jaeeun-park/">LinkedIn</a><a href="https://github.com/LudyPark">GitHub</a></p></section>
-    </main>
-    <footer>© 2026 Jaeeun Park</footer>
-  </div>
+    <article id="cloud-cost" class="case">
+      <p class="category">Cost investigation · AWS S3 / CloudTrail / Athena</p>
+      <h2>Finding the queries behind rising S3 API costs</h2>
+      <p class="outcome">A plausible first explanation turned out to be wrong. I attributed the requests to unused analytics schedules and reduced daily S3 API cost from about $138 to $6.</p>
+      <dl class="case-summary">
+        <div><dt>Situation</dt><dd>S3 API cost had risen sharply; a data crawler seemed like the most likely cause at first.</dd></div>
+        <div><dt>My role</dt><dd>I traced request sources through billing, CloudTrail records, Athena history, and scheduled workloads.</dd></div>
+        <div><dt>Key decision</dt><dd>Stop unused schedules after rechecking the hypothesis across a longer billing window.</dd></div>
+        <div><dt>Result</dt><dd>Daily S3 API cost fell from about $138 to $6, a 96% reduction.</dd></div>
+      </dl>
+      <div class="prose">
+        <h3>Why the first answer was not enough</h3>
+        <p>Changing the crawler schedule initially appeared to reduce cost, but billing data arrived with a delay. I did not treat that timing correlation as evidence of cause. A longer recheck showed the crawler was not the source of the high request volume.</p>
+        <h3>How I found the source</h3>
+        <p>I grouped CloudTrail events by request type and caller, then compared the result with query history. The dominant requests came from scheduled analytics queries scanning an unused table without partition conditions. The schedules had no remaining consumer, but they still generated broad storage scans.</p>
+        <h3>What I changed and verified</h3>
+        <p>I stopped the unused schedules and compared the same daily S3 API cost signal afterward. The cost fell from about $138 to $6 per day. This result is intentionally scoped to S3 API requests, not the whole AWS bill.</p>
+        <details>
+          <summary>Technical note: investigation sequence</summary>
+          <div class="note-body">
+            <h4>Evidence order</h4>
+            <ul>
+              <li>Identify the billing dimension that increased.</li>
+              <li>Attribute the request type and caller from audit records.</li>
+              <li>Connect the caller to a concrete workload and check whether it still had a consumer.</li>
+              <li>Apply the smallest change that removes the request source, then compare the same cost signal after the billing delay.</li>
+            </ul>
+            <h4>Why stop rather than optimize</h4>
+            <p>Partitioning or narrowing the query range would reduce an active workload. These schedules were no longer used, so removing them eliminated the source instead of optimizing work with no product value.</p>
+          </div>
+        </details>
+      </div>
+    </article>
+
+    <section id="more-work" class="more-work">
+      <h2>Additional work</h2>
+      <h3>Additional payment authorization</h3>
+      <p>For fare changes after an initial authorization, I designed a separate hold for only the additional amount because the provider could not increase the existing hold. A failure affected the incremental amount rather than putting the original ride payment at risk.</p>
+      <h3>Device integration and query tuning</h3>
+      <p>I built a mobile SDK that connected BLE devices to a server through a phone, extending a platform that had supported Wi-Fi devices. I also improved a reporting query by replacing nested subqueries with joins and changing its union structure.</p>
+    </section>
+    <p class="scope-note">These accounts are based on my work. Company names and internal identifiers are omitted; outcome metrics are rounded and kept to the scope of each case.</p>
+    <section class="contact" aria-label="Contact"><p><a href="mailto:jjomang7602@gmail.com">Email</a><a href="https://www.linkedin.com/in/ludy-jaeeun-park/">LinkedIn</a><a href="https://github.com/LudyPark">GitHub</a></p></section>
+  </main>
+  <footer class="wrap">© 2026 Jaeeun Park</footer>
 </body>
 </html>
