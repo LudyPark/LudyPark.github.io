@@ -1,1 +1,88 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="description" content="Case study: scaling MQTT ingestion and TCP command delivery across pods."><title>Scaling MQTT ingestion without duplicating writes — Jaeeun Park</title><link rel="stylesheet" href="../notes.css?v=20261001"></head><body><div class="wrap"><nav class="site-nav" aria-label="Site navigation"><a class="brand" href="../index.html">Jaeeun Park</a><div class="nav-links"><a href="../case-studies.html">Selected work</a><a href="https://www.linkedin.com/in/ludy-jaeeun-park/">LinkedIn</a></div></nav><main><p class="eyebrow">MQTT · TCP · Kubernetes</p><h1>Scaling MQTT ingestion without duplicating writes</h1><p class="lede">Running a second copy of this service broke it in two ways at once. The same vehicle data was written to the database twice, and a command meant for one vehicle could arrive at a server that was not the one holding that vehicle's connection. Both problems had the same source, two device protocols the hardware forced on us, and each needed the opposite fix.</p><p class="meta">Scope: multi-pod device ingestion · My role: PoC, client-library replacement, and broker upgrade</p><h2>1. Two protocols, chosen by the hardware</h2><p>Off-the-shelf GPS trackers used a vendor binary TCP protocol with firmware we could not change, while vehicle telemetry was ours and used MQTT. One service therefore held a broker-facing MQTT consumer and pod-local TCP endpoints at once.</p><table class="compare"><thead><tr><th></th><th>MQTT vehicles</th><th>TCP trackers</th></tr></thead><tbody><tr><td>Where the server sits</td><td>Subscriber behind a broker</td><td>The connection endpoint</td></tr><tr><td>Who holds the device connection</td><td>The broker</td><td>One specific pod</td></tr><tr><td>Scaling ingest</td><td>Every pod received the same packet: a distribution problem</td><td>The L4 load balancer already spread devices across pods</td></tr><tr><td>Scaling commands</td><td>Publish to the broker</td><td>Reach the pod holding the live socket</td></tr></tbody></table><p>Those are two different problems. MQTT ingestion was work distribution: ordinary subscriptions delivered the same message to every replica, so both consumers wrote the same packet. TCP control was connection ownership: the live socket existed only in one pod's memory. Treating both as generic multi-pod issues would hide that they need opposite routing.</p><p>Redis could share a device-to-connection identifier, but it could not make the socket transferable, because the handle still referred to memory owned by one pod. A distributed registry would need atomic ownership changes on reconnect, stale-entry cleanup after pod death, and re-query or retry after forwarding failure.</p><h2>2. The client library was dropping delivered messages</h2><p>MQTT shared subscriptions could distribute incoming work, but the Spring Integration implementation failed in a less obvious place.</p><p>The PoC separated broker behavior from client behavior. The broker correctly distributed messages for <code>$share/GROUP/topic</code>, but Spring Integration's Paho client compared that subscription string with the incoming <code>topic</code> and discarded the delivered message before it reached the application listener. This was the long-standing <code>eclipse-paho/paho.mqtt.java#965</code> issue. Spring Integration 6.2 offered shared-client support but still used Paho, and moving to 6.x required Java 17 and Spring 6, so upgrading did not remove the blocker.</p><h2>3. Replace the client, upgrade the broker</h2><p>Replacing the client with HiveMQ removed that blocker, at the cost of owning connect, reconnect, and subscription-recovery code directly. The production broker also had to change, from mosquitto 1.4.15 to the 2.0.15 already on staging, because shared subscriptions are a broker capability. I confirmed supported brokers provide this with MQTT v3 and that the upgrade preserved existing v3 clients.</p><p>For TCP control, I chose fan-out rather than that registry. At the command volume in question, sending one intent to every pod cost less than making distributed ownership correct.</p><h2>4. Split the data coming in, broadcast the commands going out</h2><div class="diagram"><p><strong>Inbound telemetry</strong></p><ol class="flow"><li>device</li><li class="arrow">→</li><li>MQTT broker</li><li class="arrow">→</li><li>shared-subscription group</li><li class="arrow">→</li><li>one pod</li><li class="arrow">→</li><li>database</li></ol><p><strong>Outbound TCP command</strong></p><ol class="flow"><li>API</li><li class="arrow">→</li><li>RabbitMQ fan-out</li><li class="arrow">→</li><li>every pod</li><li class="arrow">→</li><li>local socket lookup</li><li class="arrow">→</li><li>owning pod</li><li class="arrow">→</li><li>device</li></ol></div><p>Incoming MQTT traffic uses shared subscriptions. For TCP commands, every pod receives the intent, checks its local socket index, and only the owner sends. That trades command-count multiplied by replica-count duplicate consumption for removing distributed ownership consistency.</p><p>The command exchange uses fan-out through Spring Cloud Stream without a consumer group, creating an anonymous auto-delete queue per instance. A consumer group would create competing consumption and could route the command to a pod that did not own the socket, so per-instance queues deliberately replicate the intent.</p><p>A publisher confirm proves broker acceptance and a consumer ACK proves completion at the broker-consumer boundary. Neither proves a physical device executed the command. Surviving a reconnect window would need command-level state such as <code>PENDING → SENT → ACKED</code>, an expiry policy, device acknowledgement, and retry-safe semantics; Redis Streams or a durable queue alone would not create that execution truth.</p><h2>5. Verification</h2><p>The broker-level PoC established that shared subscriptions assign a message to one subscriber. Repeating that boundary test through Spring Integration exposed the client-side discard, and the HiveMQ implementation passed the same path. After rollout the live path no longer produced the duplicate writes seen with two replicas. This does not establish end-to-end exactly-once processing across acknowledgements, reconnects, commits, and retries.</p><h2>6. Result</h2><p>The service had already been running two copies, which is why the duplicate writes were visible in the first place. Correct ingestion no longer depends on running exactly one replica: incoming device data is distributed across consumers instead of duplicated, and commands still reach the one pod holding the vehicle's connection. Shared subscriptions cover two MQTT clients and five topics in production.</p><h2>7. What this does not solve</h2><p>Shared subscriptions do not guarantee exactly-once database processing; reconnects can still cause loss or duplication depending on QoS, session, acknowledgement, and commit timing. Fan-out is a fast routing path for connected sockets, not durable command execution: commands issued during a reconnect window can be lost, stale mappings can survive a pod crash, and anonymous auto-delete queues are not a command store. Broker and RabbitMQ failures remain separate domains.</p><p>The telemetry subscription used MQTT QoS 0, so shared subscriptions changed work distribution rather than delivery durability. Even QoS 1 or 2 would only strengthen the client-broker delivery contract; consumer idempotency would still be required around the database write. It can also fail silently: a broker without shared-subscription support falls back to delivering every packet to every consumer, so duplicate device-data storage needs monitoring. Recent per-device history also belongs outside pod memory; the battery estimator stores it in Redis.</p><p class="note">Product and OSS names are shown; company names, internal topics, and host names are omitted.</p><p class="note"><a href="../case-studies.html">← All selected work</a></p></main><footer>© Jaeeun Park</footer></div></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Case study: scaling MQTT ingestion and TCP command delivery across pods.">
+<title>Scaling MQTT ingestion without duplicating writes — Jaeeun Park</title>
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../notes.css?v=20261002"></head>
+<body>
+<div class="wrap">
+<nav class="site-nav" aria-label="Site navigation"><a class="brand" href="../index.html">Jaeeun Park</a>
+<div class="nav-links"><a href="../case-studies.html">Selected work</a><a href="https://www.linkedin.com/in/ludy-jaeeun-park/">LinkedIn</a></div>
+</nav>
+<main>
+<p class="eyebrow">MQTT · TCP · Kubernetes</p>
+<h1>Scaling MQTT ingestion without duplicating writes</h1>
+<p class="lede">Running a second copy of this service broke it in two ways at once. The same vehicle data was written to the database twice, and a command meant for one vehicle could arrive at a server that was not the one holding that vehicle's connection. Both problems had the same source, two device protocols the hardware forced on us, and each needed the opposite fix.</p>
+<p class="meta">Scope: multi-pod device ingestion · My role: PoC, client-library replacement, and broker upgrade</p>
+<h2>1. Two protocols, chosen by the hardware</h2>
+<p>Off-the-shelf GPS trackers used a vendor binary TCP protocol with firmware we could not change, while vehicle telemetry was ours and used MQTT. One service therefore held a broker-facing MQTT consumer and pod-local TCP endpoints at once.</p>
+<div class="table-scroll">
+<table class="compare">
+<thead>
+<tr><th scope="col"></th><th scope="col">MQTT vehicles</th><th scope="col">TCP trackers</th></tr>
+</thead>
+<tbody>
+<tr><td>Where the server sits</td><td>Subscriber behind a broker</td><td>The connection endpoint</td></tr>
+<tr><td>Who holds the device connection</td><td>The broker</td><td>One specific pod</td></tr>
+<tr><td>Scaling ingest</td><td>Every pod received the same packet: a distribution problem</td><td>The L4 load balancer already spread devices across pods</td></tr>
+<tr><td>Scaling commands</td><td>Publish to the broker</td><td>Reach the pod holding the live socket</td></tr>
+</tbody>
+</table>
+</div>
+<p>Those are two different problems. MQTT ingestion was work distribution: ordinary subscriptions delivered the same message to every replica, so both consumers wrote the same packet. TCP control was connection ownership: the live socket existed only in one pod's memory. Treating both as generic multi-pod issues would hide that they need opposite routing.</p>
+<p>Redis could share a device-to-connection identifier, but it could not make the socket transferable, because the handle still referred to memory owned by one pod. A distributed registry would need atomic ownership changes on reconnect, stale-entry cleanup after pod death, and re-query or retry after forwarding failure.</p>
+<h2>2. The client library was dropping delivered messages</h2>
+<p>MQTT shared subscriptions could distribute incoming work, but the Spring Integration implementation failed in a less obvious place.</p>
+<p>The PoC separated broker behavior from client behavior. The broker correctly distributed messages for <code>$share/GROUP/topic</code>, but Spring Integration's Paho client compared that subscription string with the incoming <code>topic</code> and discarded the delivered message before it reached the application listener. This was the long-standing <code>eclipse-paho/paho.mqtt.java#965</code> issue. Spring Integration 6.2 offered shared-client support but still used Paho, and moving to 6.x required Java 17 and Spring 6, so upgrading did not remove the blocker.</p>
+<h2>3. Replace the client, upgrade the broker</h2>
+<p>Replacing the client with HiveMQ removed that blocker, at the cost of owning connect, reconnect, and subscription-recovery code directly. The production broker also had to change, from mosquitto 1.4.15 to the 2.0.15 already on staging, because shared subscriptions are a broker capability. I confirmed supported brokers provide this with MQTT v3 and that the upgrade preserved existing v3 clients.</p>
+<p>For TCP control, I chose fan-out rather than that registry. At the command volume in question, sending one intent to every pod cost less than making distributed ownership correct.</p>
+<h2>4. Split the data coming in, broadcast the commands going out</h2>
+<div class="diagram">
+<p><strong>Inbound telemetry</strong></p>
+<ol class="flow">
+<li>device</li>
+<li class="arrow">→</li>
+<li>MQTT broker</li>
+<li class="arrow">→</li>
+<li>shared-subscription group</li>
+<li class="arrow">→</li>
+<li>one pod</li>
+<li class="arrow">→</li>
+<li>database</li>
+</ol>
+<p><strong>Outbound TCP command</strong></p>
+<ol class="flow">
+<li>API</li>
+<li class="arrow">→</li>
+<li>RabbitMQ fan-out</li>
+<li class="arrow">→</li>
+<li>every pod</li>
+<li class="arrow">→</li>
+<li>local socket lookup</li>
+<li class="arrow">→</li>
+<li>owning pod</li>
+<li class="arrow">→</li>
+<li>device</li>
+</ol>
+</div>
+<p>Incoming MQTT traffic uses shared subscriptions. For TCP commands, every pod receives the intent, checks its local socket index, and only the owner sends. That trades command-count multiplied by replica-count duplicate consumption for removing distributed ownership consistency.</p>
+<p>The command exchange uses fan-out through Spring Cloud Stream without a consumer group, creating an anonymous auto-delete queue per instance. A consumer group would create competing consumption and could route the command to a pod that did not own the socket, so per-instance queues deliberately replicate the intent.</p>
+<p>A publisher confirm proves broker acceptance and a consumer ACK proves completion at the broker-consumer boundary. Neither proves a physical device executed the command. Surviving a reconnect window would need command-level state such as <code>PENDING → SENT → ACKED</code>, an expiry policy, device acknowledgement, and retry-safe semantics; Redis Streams or a durable queue alone would not create that execution truth.</p>
+<h2>5. Verification</h2>
+<p>The broker-level PoC established that shared subscriptions assign a message to one subscriber. Repeating that boundary test through Spring Integration exposed the client-side discard, and the HiveMQ implementation passed the same path. After rollout the live path no longer produced the duplicate writes seen with two replicas. This does not establish end-to-end exactly-once processing across acknowledgements, reconnects, commits, and retries.</p>
+<h2>6. Result</h2>
+<p>The service had already been running two copies, which is why the duplicate writes were visible in the first place. Correct ingestion no longer depends on running exactly one replica: incoming device data is distributed across consumers instead of duplicated. For a currently connected device, the command intent is broadcast so that the pod holding the live TCP socket can send it. Shared subscriptions cover two MQTT clients and five topics in production.</p>
+<h2>7. What this does not solve</h2>
+<p>Shared subscriptions do not guarantee exactly-once database processing; reconnects can still cause loss or duplication depending on QoS, session, acknowledgement, and commit timing. Fan-out is a fast routing path for connected sockets, not durable command execution: commands issued during a reconnect window can be lost, stale mappings can survive a pod crash, and anonymous auto-delete queues are not a command store. Broker and RabbitMQ failures remain separate domains.</p>
+<p>The telemetry subscription used MQTT QoS 0, so shared subscriptions changed work distribution rather than delivery durability. Even QoS 1 or 2 would only strengthen the client-broker delivery contract; consumer idempotency would still be required around the database write. It can also fail silently, and unsupported shared-subscription behavior is broker- and version-dependent, so the system must detect both duplicate writes and missing deliveries rather than assuming a safe fallback. Recent per-device history also belongs outside pod memory; the battery estimator stores it in Redis.</p>
+<p class="note">Product and OSS names are shown; company names, internal topics, and host names are omitted.</p>
+<p class="note"><a href="../case-studies.html">← All selected work</a></p>
+</main>
+<footer>© Jaeeun Park</footer>
+</div>
+</body>
+</html>

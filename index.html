@@ -1,18 +1,94 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="description" content="Jaeeun Park, Kotlin and Spring Boot backend engineer working on transaction design, delivery semantics, and production debugging."><meta property="og:type" content="website"><meta property="og:title" content="Jaeeun Park — Backend Engineer"><meta property="og:description" content="Backend case studies in production debugging, distributed systems, payments, cloud cost, device algorithms, and engineering enablement."><meta property="og:url" content="https://ludypark.github.io/"><title>Jaeeun Park — Backend Engineer</title><link rel="stylesheet" href="notes.css?v=20261001"></head>
-<body><div class="wrap"><nav class="site-nav" aria-label="Site navigation"><a class="brand" href="index.html">Jaeeun Park</a><div class="nav-links"><a href="case-studies.html">Selected work</a><a href="https://www.linkedin.com/in/ludy-jaeeun-park/">LinkedIn</a><a href="https://github.com/LudyPark">GitHub</a></div></nav><main>
-<p class="eyebrow">Backend engineer · 5+ years</p><h1>Jaeeun Park</h1><p class="lede">I am a backend engineer who builds and operates production systems where correctness, failure handling, and observability matter. I work with Kotlin and Spring Boot on PostgreSQL transaction design, asynchronous state machines, MQTT and RabbitMQ delivery paths, Redis-backed cross-pod state, and JVM production debugging. When a symptom-level fix does not work, I go back and redefine the failure mechanism: recurring restarts that survived a memory increase were a transaction-scope problem, while rising S3 cost came from abandoned scheduled queries rather than storage.</p><hr class="rule">
-<section class="case-list" aria-labelledby="featured-work"><h2 id="featured-work" class="section-intro">Featured work</h2>
-<article class="case"><div><p class="tags">Reliability</p><h2><a href="notes/oom-incident.html">Tracing recurring pod restarts to transaction scope</a></h2><p><strong>Problem:</strong> A vehicle-data service restarted every three to five minutes even after its memory limit was doubled. <strong>Decision:</strong> Used accumulated thread CPU, transaction duration, and HikariCP waits to trace the failure to reflection-based alert serialization inside a database transaction. <strong>Result:</strong> External reporting moved outside the transaction; restarts stopped and container memory settled near 2.4 GiB.</p></div><p class="metric"><strong>~2.4 GiB</strong>stable container memory</p></article>
-<article class="case"><div><p class="tags">Distributed systems</p><h2><a href="notes/mqtt-scaling.html">Scaling MQTT ingestion without duplicating writes</a></h2><p><strong>Problem:</strong> A second replica duplicated MQTT writes, while TCP commands could reach a pod that did not own the target socket. <strong>Decision:</strong> Used MQTT shared subscriptions for inbound distribution and RabbitMQ fan-out for pod-local TCP connection ownership. <strong>Result:</strong> The service no longer depends on a single replica for correct ingestion, without claiming end-to-end exactly-once processing.</p></div><p class="metric"><strong>Multi-replica safe</strong>single-replica assumption removed</p></article>
-<article class="case"><div><p class="tags">Engineering enablement</p><h2><a href="notes/review-policy.html">Centralizing review policy across ten repositories</a></h2><p><strong>Problem:</strong> Review workflows and prompts were copied across ten repositories and five technology stacks, so each rule change risked omissions and policy drift. <strong>Decision:</strong> Centralized the policy, synchronized it to service repositories, and selected stack- and change-specific reviews, with dedicated SQL and migration paths. <strong>Result:</strong> One policy change could be distributed consistently; no review-time reduction is claimed because that outcome was not instrumented.</p></div><p class="metric"><strong>10 repositories</strong>5 technology stacks</p></article>
-</section>
-<section class="case-list" aria-labelledby="more-work"><h2 id="more-work" class="section-intro">More case studies</h2>
-<article class="case"><div><p class="tags">Cost and operations</p><h2><a href="notes/s3-cost-investigation.html">Finding the workload behind an S3 API-cost spike</a></h2><p><strong>Problem:</strong> S3 API cost reached $138 per day, but principal-based attribution pointed to the wrong workload. <strong>Decision:</strong> Re-aggregated CloudTrail by user agent and matched request windows with Athena execution IDs and scheduled SQL. <strong>Result:</strong> Five unused schedules were removed and S3 API cost fell to $6 per day.</p></div><p class="metric"><strong>$138 → $6 / day</strong>S3 API cost</p></article>
-<article class="case"><div><p class="tags">Algorithms and device data</p><h2><a href="notes/battery-signal-filter.html">Filtering battery state under driving load</a></h2><p><strong>Problem:</strong> Load-induced voltage sag could make a moving vehicle appear almost empty and distort battery-swap pricing. <strong>Decision:</strong> Combined a causal Hampel filter using median absolute deviation with an asymmetric EMA and confirmed-stop pricing rules. <strong>Result:</strong> Recorded-trace simulation reduced the maximum displayed drop from about 25 percentage points to about 6; this was not a production A/B measurement.</p></div><p class="metric"><strong>25 pp → ~6 pp</strong>recorded-trace simulation</p></article>
-<article class="case"><div><p class="tags">Payments</p><h2><a href="notes/tipping-payment-flow.html">Adding four payment methods without breaking one-tip-per-ride</a></h2><p><strong>Problem:</strong> Four payment methods had to enter an existing tip flow without violating the one-tip-per-ride invariant. <strong>Decision:</strong> Kept the database unique constraint as the final guard, separated idempotency from the ride reference, and handled synchronous capture and asynchronous callback completion explicitly. <strong>Result:</strong> Four methods now run across two regions, and three defects in the shared payment path were corrected.</p></div><p class="metric"><strong>4 payment methods</strong>two regions</p></article>
-<article class="case"><div><p class="tags">Payments</p><h2><a href="notes/incremental-authorization.html">Handling a fare increase after authorization</a></h2><p><strong>Problem:</strong> A destination change could raise the final fare without securing the increase before settlement. <strong>Decision:</strong> Preserved the original authorization and created a second hold only for the positive delta because MoMo could not increase an existing hold and the production AOF fee rate was zero. <strong>Result:</strong> The maximum unsecured exposure fell from the full fare to the added amount; this is a risk bound, not a measured bad-debt reduction.</p></div><p class="metric"><strong>Exposure cap</strong>full fare → added amount</p></article>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Jaeeun Park, Kotlin and Spring Boot backend engineer working on transaction design, delivery semantics, and production debugging.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Jaeeun Park — Backend Engineer">
+<meta property="og:description" content="Backend case studies in production debugging, distributed systems, payments, cloud cost, device algorithms, and engineering enablement.">
+<meta property="og:url" content="https://ludypark.github.io/">
+<title>Jaeeun Park — Backend Engineer</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="notes.css?v=20261002"></head>
+<body>
+<div class="wrap">
+<nav class="site-nav" aria-label="Site navigation"><a class="brand" href="index.html">Jaeeun Park</a>
+<div class="nav-links"><a href="case-studies.html">Selected work</a><a href="https://www.linkedin.com/in/ludy-jaeeun-park/">LinkedIn</a><a href="https://github.com/LudyPark">GitHub</a></div>
+</nav>
+<main>
+<p class="eyebrow">Backend engineer · 5+ years</p>
+<h1>Jaeeun Park</h1>
+<p class="lede">I am a backend engineer who builds and operates production systems where correctness, failure handling, and observability matter. I work with Kotlin and Spring Boot on PostgreSQL transaction design, asynchronous state machines, MQTT and RabbitMQ delivery paths, Redis-backed cross-pod state, and JVM production debugging. When a symptom-level fix does not work, I go back and redefine the failure mechanism: recurring restarts that survived a memory increase were a transaction-scope problem, while rising S3 cost came from abandoned scheduled queries rather than storage.</p>
+<hr class="rule">
+<section class="case-list" aria-labelledby="selected-work">
+<h2 id="selected-work" class="section-intro">Selected work</h2>
+<article class="case">
+<div>
+<p class="tags">Payments</p>
+<h3><a href="notes/tipping-payment-flow.html">Adding four payment methods without breaking one-tip-per-ride</a></h3>
+<p><strong>Problem:</strong> Four payment methods had to enter an existing tip flow without violating the one-tip-per-ride invariant. <strong>Decision:</strong> Kept the database unique constraint as the final guard, separated idempotency from the ride reference, and handled synchronous capture and asynchronous callback completion explicitly. <strong>Result:</strong> Four methods now run across two regions, and three defects in the shared payment path were corrected.</p>
+</div>
+<p class="metric"><strong>4 payment methods</strong>two regions</p>
+</article>
+<article class="case">
+<div>
+<p class="tags">Payments</p>
+<h3><a href="notes/incremental-authorization.html">Handling a fare increase after authorization</a></h3>
+<p><strong>Problem:</strong> A destination change could raise the final fare without securing the increase before settlement. <strong>Decision:</strong> Preserved the original authorization and created a second hold only for the positive delta because MoMo could not increase an existing hold and the production AOF fee rate was zero. <strong>Result:</strong> The original hold remains intact, and a destination-change increase is now either separately authorized or the change is rejected. This moves the authorization boundary from settlement time to the destination-change decision; no collection-rate improvement was measured.</p>
+</div>
+<p class="metric"><strong>Authorization boundary</strong>settlement → destination change</p>
+</article>
+<article class="case">
+<div>
+<p class="tags">Reliability</p>
+<h3><a href="notes/oom-incident.html">Tracing recurring pod restarts to transaction scope</a></h3>
+<p><strong>Problem:</strong> A vehicle-data service restarted every three to five minutes even after its memory limit was doubled. <strong>Decision:</strong> Used accumulated thread CPU, transaction duration, and HikariCP waits to trace the failure to reflection-based alert serialization inside a database transaction. <strong>Result:</strong> External reporting moved outside the transaction; restarts stopped and container memory settled near 2.4 GiB.</p>
+</div>
+<p class="metric"><strong>~2.4 GiB</strong>stable container memory</p>
+</article>
+<article class="case">
+<div>
+<p class="tags">Distributed systems</p>
+<h3><a href="notes/mqtt-scaling.html">Scaling MQTT ingestion without duplicating writes</a></h3>
+<p><strong>Problem:</strong> A second replica duplicated MQTT writes, while TCP commands could reach a pod that did not own the target socket. <strong>Decision:</strong> Used MQTT shared subscriptions for inbound distribution and RabbitMQ fan-out for pod-local TCP connection ownership. <strong>Result:</strong> The service no longer depends on a single replica for correct ingestion, without claiming end-to-end exactly-once processing.</p>
+</div>
+<p class="metric"><strong>Single-replica assumption removed</strong>inbound work distributed by broker</p>
+</article>
+<article class="case">
+<div>
+<p class="tags">Engineering enablement</p>
+<h3><a href="notes/review-policy.html">Centralizing review policy across ten repositories</a></h3>
+<p><strong>Problem:</strong> Review workflows and prompts were copied across ten repositories and five technology stacks, so each rule change risked omissions and policy drift. <strong>Decision:</strong> Centralized the policy, synchronized it to service repositories, and selected stack- and change-specific reviews, with dedicated SQL and migration paths. <strong>Result:</strong> One policy change could be distributed consistently; no review-time reduction is claimed because that outcome was not instrumented.</p>
+</div>
+<p class="metric"><strong>10 repositories</strong>5 technology stacks</p>
+</article>
+<article class="case">
+<div>
+<p class="tags">Cost and operations</p>
+<h3><a href="notes/s3-cost-investigation.html">Finding the workload behind an S3 API-cost spike</a></h3>
+<p><strong>Problem:</strong> S3 API cost reached $138 per day, but principal-based attribution pointed to the wrong workload. <strong>Decision:</strong> Re-aggregated CloudTrail by user agent and matched request windows with Athena execution IDs and scheduled SQL. <strong>Result:</strong> Five unused schedules were removed and S3 API cost fell to $6 per day.</p>
+</div>
+<p class="metric"><strong>$138 → $6 / day</strong>S3 API cost</p>
+</article>
+<article class="case">
+<div>
+<p class="tags">Algorithms and device data</p>
+<h3><a href="notes/battery-signal-filter.html">Filtering battery state under driving load</a></h3>
+<p><strong>Problem:</strong> Load-induced voltage sag could make a moving vehicle appear almost empty and distort battery-swap pricing. <strong>Decision:</strong> Combined a causal Hampel filter using median absolute deviation with an asymmetric EMA and confirmed-stop pricing rules. <strong>Result:</strong> Recorded-trace simulation reduced the maximum displayed drop from about 25 percentage points to about 6; this was not a production A/B measurement.</p>
+</div>
+<p class="metric"><strong>25 pp → ~6 pp</strong>recorded-trace simulation</p>
+</article>
 </section>
 <p class="note"><a href="case-studies.html">Open the case-study index →</a></p>
-<section aria-labelledby="experience"><h2 id="experience">Experience</h2><p><strong>Backend Engineer · November 2023–present</strong><br>Backend development and production operations for ride-hailing and electric-mobility fleet services across Southeast Asia. Worked across payment authorization and capture flows, payment-state correctness, MQTT/TCP device ingestion, cross-pod coordination, and production incident response using Kotlin, Spring Boot, PostgreSQL, Redis, RabbitMQ, MQTT, and Kubernetes. The case studies above come from this work.</p><p><strong>Backend Engineer · May 2021–November 2023</strong><br>Backend development for device and data platforms. Reduced a dashboard query over 6.6 GB of data from approximately 10 seconds to 600 ms by replacing nested subqueries with joins and redesigning a UNION-based query shape that repeatedly read the same data. Built a mobile-gateway SDK that abstracted BLE transport for device manufacturers when the platform had previously supported Wi-Fi devices only.</p></section>
-<p class="note">Company names and internal identifiers are omitted. Historical incident and cost figures are labeled in their detailed notes.</p></main><footer><a href="mailto:jjomang7602@gmail.com">jjomang7602@gmail.com</a> · <a href="https://www.linkedin.com/in/ludy-jaeeun-park/">LinkedIn</a> · <a href="https://github.com/LudyPark">GitHub</a></footer></div></body></html>
+<section aria-labelledby="experience">
+<h2 id="experience">Experience</h2>
+<p><strong>Backend Engineer · November 2023–present</strong><br>Backend development and production operations for ride-hailing and electric-mobility fleet services across Southeast Asia. Worked across payment authorization and capture flows, payment-state correctness, MQTT/TCP device ingestion, cross-pod coordination, and production incident response using Kotlin, Spring Boot, PostgreSQL, Redis, RabbitMQ, MQTT, and Kubernetes. The case studies above come from this work.</p>
+<p><strong>Backend Engineer · May 2021–November 2023</strong><br>Backend development for device and data platforms. Reduced a dashboard query over 6.6 GB of data from approximately 10 seconds to 600 ms by replacing nested subqueries with joins and redesigning a UNION-based query shape that repeatedly read the same data. Built a mobile-gateway SDK that abstracted BLE transport for device manufacturers when the platform had previously supported Wi-Fi devices only.</p>
+</section>
+<p class="note">Company names and internal identifiers are omitted. Historical incident and cost figures are labeled in their detailed notes.</p>
+</main>
+<footer><a href="mailto:jjomang7602@gmail.com">jjomang7602@gmail.com</a> · <a href="https://www.linkedin.com/in/ludy-jaeeun-park/">LinkedIn</a> · <a href="https://github.com/LudyPark">GitHub</a></footer>
+</div>
+</body>
+</html>
