@@ -6,7 +6,7 @@
 <meta name="description" content="Case study: centralizing pull-request review policy across ten repositories and five technology stacks, with stack and change-category routing.">
 <title>Centralizing review policy across ten repositories — Jaeeun Park</title>
 <link rel="icon" href="../favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="../notes.css?v=20261005"></head>
+<link rel="stylesheet" href="../notes.css?v=20261010"></head>
 <body>
 <div class="wrap">
 <nav class="site-nav" aria-label="Site navigation"><a class="brand" href="../index.html">Jaeeun Park</a>
@@ -19,9 +19,9 @@
 <p class="meta">Scope: review policy for ten service repositories · My role: policy structure, stack and category routing, sync mechanism</p>
 <h2>1. Copying the policy was the failure mode</h2>
 <p>The repositories spanned Kotlin/Spring Boot, NestJS, React, React Native, and Node.js. With workflow files and prompts held per repository, a single rule change had to be applied ten times. Any repository missed in that pass silently diverged, and divergence is not visible at review time: a weaker policy still produces review comments, so nothing signals that a repository has fallen behind.</p>
-<p>The alternative failure was the opposite. A single prompt covering every language and framework grows long enough that important findings get buried, and conventions from one stack contradict another. Neither full duplication nor full unification was correct.</p>
+<p>One global prompt was not sufficient either. It became long enough to bury important checks and mixed conventions that conflicted across stacks. I kept a shared policy skeleton and separated the stack-specific rules.</p>
 <h2>2. Separating policy from execution</h2>
-<p>I split the system along that boundary. The central repository is the policy control plane and the single source of truth for review criteria. Each service repository runs an execution plane: workflows and prompts synchronized from the centre, with the distribution list and exclusions managed explicitly so the blast radius of a policy change is known before it ships.</p>
+<p>I treated the central repository as the policy control plane and each service repository as an execution plane. The central repository owns the review criteria; synchronized workflows and prompts run inside the service repositories. The distribution list and exclusions are explicit, so each policy change has a known target set.</p>
 <div class="diagram">
 <ol class="flow">
 <li>central policy repository</li>
@@ -41,7 +41,7 @@
 <p>Execution is split by role. <code>check-ignore</code> is the gate that decides whether a review should run at all and which category applies; <code>category-review</code> performs the review with the selected criteria; a conditional SQL path handles database changes; an interactive path serves manual queries.</p>
 <h2>3. Why database changes needed their own path</h2>
 <p>SQL and migration changes were routed separately because their failure modes are not the same as application code. Application rollback is often possible by deploying a previous build; a migration may already have mutated data or changed compatibility constraints, so rollback is itself another migration.</p>
-<p>The checks that matter there are also different. Index creation and locking behaviour determine whether a migration blocks writes on a live table, backfills need to be bounded rather than run as one statement, and a schema change has to remain compatible with the application versions that will run during and after a rolling deployment. Folding those into general code-review advice flattens them into style comments.</p>
+<p>Migration review checks index creation and locking behaviour, bounded backfills, and compatibility across application versions in a rolling deployment. A general code-review prompt would reduce those risks to style comments.</p>
 <h2>4. Three rules that came from failures</h2>
 <p>Each of these came from the automation failing in a way that looked like success, which is the failure mode that matters most in a pipeline nobody watches.</p>
 <ul>
@@ -50,11 +50,11 @@
 <li>A missing heredoc terminator produced a workflow that reported success with an empty prompt, so reviews silently disappeared. Recovering from that made empty-prompt detection a requirement rather than an assumption.</li>
 </ul>
 <h2>5. Boundaries the automation does not cross</h2>
-<p>The bot leaves review signals; it does not merge. Style-preference comments are excluded, and low-confidence suspicions are not posted. That confidence rule is noise control rather than an accuracy guarantee: it stops weak suspicion from being published as a definite finding, and it does not make the published findings correct. Human review, CI, and branch protection remain separate safeguards, and the goal was repeatable pre-checks and consistent criteria rather than replacing reviewer judgement.</p>
+<p>The bot posts review findings but cannot merge. It skips style preferences and low-confidence suspicions. The confidence threshold reduces noise; it does not make accepted findings correct. Human review, CI, and branch protection remain the approval path.</p>
 <h2>6. Result</h2>
-<p>A review-rule change could be made once and distributed consistently instead of being copied across ten repositories. Stack- and change-specific routing also prevented SQL and migration risks from being flattened into generic application-code advice. I do not claim a measured reduction in review time because that outcome was not instrumented.</p>
-<h2>7. What this does not solve</h2>
-<p>Centralization moves the risk rather than removing it: an error in the central policy now propagates to every repository on the next sync. Versioning, staged rollout, and rollback are the controls that would bound that, and I am describing them as the next design step rather than as implemented safeguards. Misclassification remains possible, which is why the <code>unknown</code> fallback exists, and a wrong stack match still means the wrong criteria are applied. Effectiveness is also unmeasured: if I repeat this, the first instrumentation would be the adoption rate per finding type, so that categories which consistently lead to changes can be strengthened and categories that are routinely ignored can be removed.</p>
+<p>A review rule is now updated once and synchronized to all ten repositories. Stack and change-category routing keeps SQL and migration checks out of generic application-code review. Review time was not instrumented, so I did not calculate a productivity improvement.</p>
+<h2>7. Remaining risks</h2>
+<p>Centralization also increases blast radius: a bad rule reaches every repository on the next sync. Versioning, staged rollout, and rollback were not implemented. The <code>unknown</code> fallback reduces the chance of applying the wrong stack profile, but it cannot eliminate misclassification. The next useful metric would be adoption rate by finding type, so ignored categories can be removed and findings that consistently lead to changes can be strengthened.</p>
 <p class="note">Internal repository identifiers are omitted.</p>
 <p class="note"><a href="../case-studies.html">← All selected work</a></p>
 </main>

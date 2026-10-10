@@ -6,7 +6,7 @@
 <meta name="description" content="Case study: diagnosing recurring pod restarts through thread-dump evidence.">
 <title>Tracing recurring pod restarts to transaction scope — Jaeeun Park</title>
 <link rel="icon" href="../favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="../notes.css?v=20261005"></head>
+<link rel="stylesheet" href="../notes.css?v=20261010"></head>
 <body>
 <div class="wrap">
 <nav class="site-nav" aria-label="Site navigation"><a class="brand" href="../index.html">Jaeeun Park</a>
@@ -18,9 +18,9 @@
 <p class="lede">A service that ingests data from vehicles in the field began restarting every three to five minutes after a deployment. Doubling its memory limit changed nothing; it grew past the new limit too. Meanwhile the vehicle data kept arriving, and the service kept falling further behind it.</p>
 <p class="meta">Scope: production incident · My role: thread-dump analysis and transaction-scope separation</p>
 <h2>1. More memory did not help</h2>
-<p>The container memory limit was raised from 4 GiB to 8 GiB, but memory still grew beyond 10 GiB. That was container memory, which does not prove the 10 GiB was Java heap: thread stacks, Metaspace, and direct buffers all contribute. So the investigation did not begin by declaring a heap leak. It began by asking why processing throughput had fallen below ingress.</p>
+<p>The container limit increased from 4 GiB to 8 GiB, but total container memory still passed 10 GiB. That figure could include Java heap, thread stacks, Metaspace, direct buffers, and other native regions. I investigated why processing throughput had fallen below ingress before classifying the incident as a heap leak.</p>
 <h2>2. Why I read thread dumps first</h2>
-<p>The symptom was “slows down, then dies,” so I looked at what was consuming time before what had accumulated. A heap dump could show the accumulated request objects and their retention paths, but it would not by itself prove which slow operation had pushed processing throughput below ingress.</p>
+<p>Because the service slowed before each restart, I started with thread dumps and connection-pool waits. A heap dump could identify retained requests and their reference paths, but not the slow operation reducing throughput.</p>
 <p>One packet-processing thread spent 8.5 seconds in <code>PgConnection.getTransactionIsolation()</code> and appeared <code>RUNNABLE</code>, which is not evidence of CPU work because native socket reads look runnable too. I correlated thread state with accumulated thread CPU, repeated stack patterns, transaction duration, and HikariCP waits: that thread showed 33,745 ms of accumulated CPU while 34 requests waited for a pool of 15.</p>
 <h2>3. An error report was holding a database connection</h2>
 <div class="table-scroll">
@@ -59,9 +59,9 @@
 <p>The trigger was not a one-time exception burst: while the same mismatch between the incoming device report and the stored records stayed unresolved, every packet produced the same alert. I reduced that repetition as well as moving delivery outside the transaction.</p>
 <p>The transaction held its connection for that whole time, waiting requests showed as <code>TIMED_WAITING</code> on the pool, and ingress continued until queued objects filled the heap.</p>
 <h2>4. Why more memory or a larger pool could not fix it</h2>
-<p>Once reflection serialization pushed the service rate below the packet arrival rate, the backlog became unstable. More heap or a larger pool adds buffering without restoring the service rate, so either would only delay the next failure. I also could not reproduce the incident locally, since the trigger depended on production data shape, so serialization tuning was hard to validate. I chose a change that structurally capped transaction time instead.</p>
+<p>Reflection serialization reduced the service rate below the packet arrival rate, so the backlog kept growing. More heap or more connections would only add buffer. The triggering production data shape could not be reproduced locally, which made serializer tuning hard to verify. I removed serialization and network I/O from the transaction instead.</p>
 <h2>5. Move the report outside the transaction</h2>
-<p>The fix changed the transaction contract rather than moving a line of code. The transactional component performs database work and returns typed alert values; a separate outer orchestrator delivers them once the proxy-managed transaction has completed. Keeping that method in another bean makes the Spring AOP boundary explicit and avoids self-invocation bypassing <code>@Transactional</code>. What mattered was moving external serialization and network I/O outside the transaction and the HikariCP connection lifetime.</p>
+<p>An outer orchestrator now calls a transactional component that performs the database work and returns typed alert values. The orchestrator sends those alerts after the proxy-managed transaction completes. Keeping the transactional method in a separate bean makes the Spring AOP boundary explicit and avoids self-invocation bypassing <code>@Transactional</code>. External serialization and network I/O no longer extend the HikariCP connection lifetime.</p>
 <pre><code><span class="kt-comment">// transaction ends before external alert delivery</span>
 <span class="kt-keyword">fun</span> <span class="kt-function">handlePacket</span>(packet: <span class="kt-type">DevicePacket</span>) {
   <span class="kt-keyword">val</span> alerts = transactionalProcessor.process(packet)
@@ -78,9 +78,9 @@
 <li>Checked the chain against thread CPU, connection waits, transaction duration, and memory trend rather than treating one metric as proof.</li>
 </ul>
 <h2>7. What this change does not guarantee</h2>
-<p>If the DB commit succeeds and the process stops before alert delivery, an alert can be lost. That was acceptable for this monitoring side effect. Mandatory delivery would require an outbox row written in the same database transaction, a retrying worker, and an external idempotency boundary; that is a redesign option, not part of the incident fix. Increasing memory or the connection pool would only delay the same throughput collapse and would add pressure to the database's connection limit.</p>
+<p>The new boundary accepts possible alert loss between the database commit and alert delivery. That was acceptable because these alerts were monitoring side effects. Mandatory delivery would require an outbox row in the database transaction, a retrying worker, and an external idempotency boundary; this incident fix did not implement those components.</p>
 <h2>8. Result</h2>
-<p>Restarts stopped and memory settled around 2.4 GiB, close to where it sat before the incident. What matters more than the number is the shape of the fix. External reporting can slow down again without holding database connections, so the same HikariCP-exhaustion chain cannot recur. Slow reporting can still reduce end-to-end throughput and must be monitored separately.</p>
+<p>After deployment, the restart cycle stopped and container memory stabilized near 2.4 GiB. Sentry reporting now runs after transaction completion, so slow serialization no longer holds a HikariCP connection. Reporting can still reduce end-to-end throughput and needs separate monitoring.</p>
 <p class="note">Historical incident figures (3–5 minute restarts, 4→8→10 GiB, 33,745 ms accumulated CPU, 34 waiting threads, 8.5 seconds, and pool size 15) are from the investigation record at the time. Internal identifiers are omitted.</p>
 <p class="note"><a href="../case-studies.html">← All selected work</a></p>
 </main>

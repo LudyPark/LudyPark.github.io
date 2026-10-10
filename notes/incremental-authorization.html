@@ -6,7 +6,7 @@
 <meta name="description" content="Case study: incremental authorization for changed fares.">
 <title>Handling a fare increase after authorization — Jaeeun Park</title>
 <link rel="icon" href="../favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="../notes.css?v=20261005"></head>
+<link rel="stylesheet" href="../notes.css?v=20261010"></head>
 <body>
 <div class="wrap">
 <nav class="site-nav" aria-label="Site navigation"><a class="brand" href="../index.html">Jaeeun Park</a>
@@ -15,7 +15,7 @@
 <main>
 <p class="eyebrow">Payments · MoMo AOF · Vietnam</p>
 <h1>Handling a fare increase after authorization</h1>
-<p class="lede">A Change of Destination could increase the final fare, but the original flow did not secure the increase before the ride ended. The resulting risk appeared at settlement: if the rider no longer had sufficient balance, the platform could recover the originally authorized amount but lose the increase. My task was therefore not simply to call another payment API; it was to improve fare recoverability without putting the original authorization at risk.</p>
+<p class="lede">At dispatch, the service authorized the estimated fare. A destination change could raise the fare, but the flow did not secure that increase when the destination changed; it tried to recover it at settlement. If the rider's balance fell before the trip ended, the original authorized amount was still recoverable but the increase could be lost. I added a separate authorization for the positive delta while leaving the original hold untouched.</p>
 <p class="meta">Scope: securing fare increases in Vietnam · My role: comparing options, verifying the minimum charge unit, and implementing the flow</p>
 <h2>1. The increase was unsecured until settlement</h2>
 <p>At dispatch the service authorized the estimated fare against the rider's account. A destination change raised the final fare, but the flow did not authorize the difference then; recovery was attempted at settlement. A rider whose balance had since dropped left the increase uncollectable while the original authorization stayed intact.</p>
@@ -36,7 +36,7 @@
 <p>I compared the options by two costs: the fare left unsecured when settlement failed, and the fee created by a second authorization. With the fee at zero, preserving the original hold and authorizing only the positive delta improved the collection boundary without an incremental MoMo AOF fee in this production configuration.</p>
 <h2>3. Proving the increase is always in a chargeable unit</h2>
 <p>The provider required a minimum payment unit of 1,000 VND, so I traced every component of the fare difference (new total minus old) through code. Base fare was rounded to 1,000 before price calculation; system fee configuration in this region used the same unit and did not take the tax-addition route; percentage coupons rounded up to 1,000; unchanged components such as tolls cancelled out in the delta.</p>
-<p>That was not a claim of a universal guarantee. Fixed-amount coupons and option-fee admin values were not constrained by the same code path, so I recorded them as operating discipline. I also confirmed that the MoMo AOF fee rate in this production region was zero. If this flow expands to a region with a non-zero rate, the trade-off needs review again.</p>
+<p>Fixed-amount coupons and admin-configured option fees did not use the same code-controlled rounding path, so I documented them as operational constraints rather than code guarantees.</p>
 <h2>4. Two entry points, two failure policies</h2>
 <p>The service creates a separate hold only for a positive delta and keeps the original hold untouched. It is enabled by region × payment-method configuration because gateway capabilities differ by region.</p>
 <div class="table-scroll">
@@ -65,7 +65,7 @@
 </table>
 </div>
 <h2>5. Settlement, and a defect I found after shipping</h2>
-<p>Each hold is captured separately, and a retry selects only holds still in the <code>HELD</code> state, so a successful capture is never charged twice. Completion is a monetary invariant over the aggregate: captured payments must sum to at least the final fare. That keeps partial-success interpretation inside the payment service rather than distributing state-combination logic to callers.</p>
+<p>Each hold is captured separately, and a retry selects only holds still in the <code>HELD</code> state, so a successful capture is never charged twice. Completion is a monetary invariant over the aggregate: captured payments must sum to at least the final fare. The payment service therefore owns partial-success interpretation instead of pushing state combinations to callers.</p>
 <p>After deployment, I found an asynchronous failure event from a rejected additional hold could incorrectly move the whole ride to an error payment state. The event now carries whether that transaction had ever held money and its transaction identifier. Consumers ignore a failed satellite hold but still cancel a ride when the original dispatch-time hold fails. Broadening the guard to every failed hold would have been a different bug.</p>
 <h2>6. Verification</h2>
 <ul class="checklist">
@@ -75,7 +75,7 @@
 <li>Confirmed production configuration for VN + MoMo AOF on both routes.</li>
 </ul>
 <h2>7. Result</h2>
-<p>The flow was deployed to the Vietnam production region for destination changes and additional fees. For destination changes, the original authorization remains intact and the positive delta must be separately authorized before the change is accepted. This moved the recovery decision from settlement time to the point where the fare changed. It did not establish a measured improvement in bad-debt or collection rate. The 1,000 VND assumption was verified through the code-controlled fare components, while fixed-amount coupons and administrator-provided option fees remained operational constraints rather than universal code guarantees.</p>
+<p>The flow now runs in Vietnam for destination changes and additional fees. A destination change is accepted only after the positive delta is authorized, while the original hold remains untouched. This moved the authorization decision from settlement to the fare-change boundary. Collection rate and bad-debt reduction were not measured. The 1,000 VND guarantee applies only to fare components controlled by the verified code paths.</p>
 <p class="note">Internal identifiers and gateway configuration are omitted.</p>
 <p class="note"><a href="../case-studies.html">← All selected work</a></p>
 </main>

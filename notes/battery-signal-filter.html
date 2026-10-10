@@ -6,7 +6,7 @@
 <meta name="description" content="Case study: filtering voltage-derived battery state in a live device-data service.">
 <title>Filtering battery state under driving load — Jaeeun Park</title>
 <link rel="icon" href="../favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="../notes.css?v=20261005"></head>
+<link rel="stylesheet" href="../notes.css?v=20261010"></head>
 <body>
 <div class="wrap">
 <nav class="site-nav" aria-label="Site navigation"><a class="brand" href="../index.html">Jaeeun Park</a>
@@ -18,14 +18,14 @@
 <p class="lede">What a rider pays to swap a battery depends on how full the old one is. This battery could not report that number itself, so the service estimated it from voltage. While riding, voltage drops for reasons that have nothing to do with remaining charge. A swap during one of those dips could be priced at almost nothing.</p>
 <p class="meta">Scope: production battery-charge estimator · My role: filter design and post-release defect fixes</p>
 <h2>1. Voltage dips while riding; the charge does not</h2>
-<p>This was an online state-estimation problem under incomplete observability. Packets contained terminal voltage but not current, so the service could not directly separate stored charge from load-induced voltage sag. Because pricing ran on the live path, every decision also had to be causal: it could use the current and past samples, but not future measurements.</p>
+<p>I treated the calculation as a causal online estimation problem. Packets contained terminal voltage but no current, so the service could not directly separate stored charge from load-induced voltage sag. Because the estimate affected live pricing, the filter could use only current and past samples.</p>
 <p>The tracker measured terminal voltage under load, not open-circuit voltage: <code>Vterminal = OCV − I × R</code>. During driving, current through internal resistance made the observed voltage fall even when stored charge had not changed. Field data showed temporary drops of 0.3–1.9 V.</p>
 <p>The original conversion mapped 76–80 V linearly to a 0–100% state of charge (SOC). A 1 V sag therefore appeared as a roughly 25 percentage-point SOC drop. If a swap happened in that window, the price calculation could approach zero.</p>
 <h2>2. Two wrong assumptions, two rejected shortcuts</h2>
 <p>Two assumptions in the input stream were wrong. GPS/LBS packets could repeat the previous heartbeat voltage from a cache, which distorted the effective time constant of the filter; only heartbeat packets now enter this calculation. And speed <code>0</code> was not a stop signal: about half of driving heartbeats reported zero during GPS gaps. The collector's no-moving-GPS-fix signal determines a confirmed stop; speed is used only by the absolute-drop guard.</p>
 <p>I rejected a fixed threshold because the server received voltage but not enough information to distinguish load sag from a genuine low-SOC change. Increasing the transmission frequency would not remove the bias, because repeated samples under load would still pull an EMA toward the sagged voltage. At a 30-second interval, a five-minute drive supplies about ten sag samples; with <code>α = 0.15</code>, <code>0.85¹⁰ ≈ 0.2</code>, so about 80% of the sag would still enter the estimate. The asymmetric EMA instead accepts slower downward movement while driving and faster upward recovery only when the vehicle is confirmed stopped, trading in-drive stability against delayed tracking of real discharge. Coulomb counting was unavailable because packets had no current measurement; a Kalman filter required a state model and covariance work disproportionate to this path.</p>
 <h2>3. Decision: a causal three-stage filter</h2>
-<p>The live path uses only past samples. I kept input validation, outlier detection, and smoothing separate so a bad value could be explained by the right step rather than by one opaque threshold.</p>
+<p>The live path uses only past samples. I kept input validation, outlier detection, and smoothing separate so each rejected value has a specific cause.</p>
 <div class="table-scroll">
 <table class="compare">
 <thead>
@@ -51,7 +51,7 @@
 <p>A charging spike of 82.5 V also made the clamp necessary: without it, one impossible reading could seed a history that held the estimate near 100%.</p>
 <h2>5. The price is fixed at a stop</h2>
 <p>Display and pricing do not use the same value blindly. The price uses the latest confirmed stopped-state voltage, is valid for ten minutes, and is invalidated if driving distance increases. The dashboard is based on unfiltered raw voltage, so it can disagree during a drive. With one voltage sensor, matching that dashboard and suppressing load-induced drops cannot both be guaranteed; operations chose stable in-drive behavior.</p>
-<p>The filter keeps nine recent samples in Redis with a 72-hour TTL because the state must be shared across collector replicas and survive pod changes. The history is recoverable and bounded, so it does not need to become part of the primary relational write model. If Redis history is unavailable, the outlier check is skipped while smoothing continues from the SOC stored with the vehicle, so a spike can enter the EMA. Entering that fallback is not yet visible in monitoring; closing that gap is the next piece of work here.</p>
+<p>Nine recent samples are stored in Redis for 72 hours so every collector replica sees the same history after pod changes. If that history is unavailable, the service skips outlier detection and continues smoothing from the SOC stored with the vehicle, which allows a spike to enter the EMA. The fallback is not yet visible in monitoring.</p>
 <div class="diagram">
 <ol class="flow">
 <li>heartbeat voltage</li>
@@ -75,7 +75,7 @@
 <li>Tested range limits and outliers separately from gradual normal discharge.</li>
 </ul>
 <h2>7. Result</h2>
-<p>On recorded voltage-trace simulations, the maximum displayed SOC drop in the affected driving pattern fell from about 25 percentage points to about 6 percentage points. This was a trace-based comparison, not a production A/B test, and it describes reduced displayed drop rather than improved state-of-charge accuracy. Voltage-only estimation cannot fully separate load sag from real charge movement: Coulomb counting was unavailable because packets contained no current measurement, and a Kalman filter would require a validated state model and covariance assumptions this path did not have. The swap price is fixed only at a stop, where the estimate has converged, and Redis fallback is still not observable in monitoring.</p>
+<p>Recorded-trace simulations reduced the maximum displayed SOC drop in the affected driving pattern from about 25 percentage points to about 6. This measured display stability, not SOC accuracy, and was not a production A/B test. Voltage-only estimation still cannot fully separate load sag from real charge movement. Pricing therefore uses the estimate only after a confirmed stop. Redis fallback still lacks monitoring.</p>
 <p class="note">Device-vendor details are omitted. Parameters above are from the production implementation.</p>
 <p class="note"><a href="../case-studies.html">← All selected work</a></p>
 </main>

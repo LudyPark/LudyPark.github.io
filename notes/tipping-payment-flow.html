@@ -6,7 +6,7 @@
 <meta name="description" content="Case study: adding four payment methods to a one-tip-per-ride flow, with the contract change, the trade-offs, and a production report narrowed before it became a hotfix.">
 <title>Adding four payment methods without breaking one-tip-per-ride — Jaeeun Park</title>
 <link rel="icon" href="../favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="../notes.css?v=20261005"></head>
+<link rel="stylesheet" href="../notes.css?v=20261010"></head>
 <body>
 <div class="wrap">
 <nav class="site-nav" aria-label="Site navigation"><a class="brand" href="../index.html">Jaeeun Park</a>
@@ -15,16 +15,16 @@
 <main>
 <p class="eyebrow">Payments · Multi-gateway · Kotlin</p>
 <h1>Adding four payment methods without breaking one-tip-per-ride</h1>
-<p class="lede">The tip flow ran under a monetary invariant: one ride can produce at most one successful tip. Violating it could charge the rider twice or credit the driver twice. The existing design used a database unique constraint as the final correctness boundary, with a short lock to reduce simultaneous side effects and a separate guard around fare finalization. My work was to preserve that invariant while adding four payment methods whose completion and failure semantics were different.</p>
+<p class="lede">One ride could produce at most one successful tip; a duplicate could charge the rider or credit the driver twice. A unique index on <code>ride_id</code> blocked a second tip row and acted as the final write guard. I added four payment methods while preserving that boundary across synchronous captures, asynchronous callbacks, and direct wallet balance updates.</p>
 <p class="meta">Scope: four payment methods, two regions · My role: gateway integration, a payment-contract change, and the failure paths</p>
 <h2>1. The rule I had to keep</h2>
 <p>The invariant lives in the database, not in application logic:</p>
 <pre><code>-- Simplified; internal identifiers omitted.
 CREATE UNIQUE INDEX ON tip_log (ride_id);</code></pre>
 <p>The business invariant was at most one successful tip, but the physical unique index was stricter: it allowed only one tip row per ride, so terminal failure rows had to be cancelled or released before a retry.</p>
-<p>Two guards sit in front of it. A short distributed lock narrows the window in which two requests run the same external side effect, and a separate guard stops a tip from merging into a fare that is already being finalized. Neither is the correctness boundary: the lock reduces concurrent side effects, and the unique index is what rejects the second write. That design predates this work. The job was to keep it true while connecting an in-house wallet, a mobile wallet, and two bank-account methods.</p>
+<p>Two guards run before the insert. A short distributed lock reduces the chance that concurrent requests issue the same external side effect, and a second guard prevents a tip from merging into a fare already being finalized. Neither replaces the unique index, which rejects a second row for the ride. This design already existed; I kept it intact while adding an in-house wallet, a mobile wallet, and two bank-account methods.</p>
 <h2>2. Each provider answers failure differently</h2>
-<p>This is where the difficulty actually lived. Each method returns a different kind of answer, and each difference lands somewhere in the flow.</p>
+<p>Each provider reported completion differently, so the request path could not handle every method with the same state transition.</p>
 <div class="table-scroll">
 <table class="compare">
 <thead>
@@ -38,13 +38,13 @@ CREATE UNIQUE INDEX ON tip_log (ride_id);</code></pre>
 </tbody>
 </table>
 </div>
-<p>The difference was not only API shape. A synchronous decline, an asynchronous callback, and a direct balance mutation create different payment-state transitions. The request path could finalize synchronous methods immediately, but callback-based methods had to remain pending until the provider supplied an authoritative outcome.</p>
+<p>API shape alone did not determine the integration. A synchronous decline, an asynchronous callback, and a direct balance mutation create different payment-state transitions. The request path could finalize synchronous methods immediately, but callback-based methods had to remain pending until the provider supplied an authoritative outcome.</p>
 <h2>3. What I changed on the shared path</h2>
-<p>Connecting the methods was the small part. Making them safe took three changes to code that every payment method runs through.</p>
+<p>I changed three shared parts of the payment path before enabling the new methods.</p>
 <h3>The wallet path verified money instead of moving it</h3>
 <p>After the first wallet release, a report showed riders getting a successful tip while their balance sat untouched. The path was calling an operation that, for accounts outside a legacy bank integration, checked that the balance was sufficient and returned without charging or writing a transaction, and the caller read that empty result as success. The same call recorded any charge that did go through under the fare channel. I moved the path to the capture operation, which always moves the money, and made the channel a parameter so a tip is recorded as a tip.</p>
 <h3>One field meant both "which ride" and "seen this before"</h3>
-<p>The existing contract conflated two different concepts: the business reference that associates a transaction with a ride, and the idempotency key that identifies a retried operation. That was survivable while a ride produced one payment, but a separate tip created a second monetary operation. Tip charges pushed a prefixed string into the ride field, so the transaction was filed against the prefix while other server paths read that same field expecting a real ride. I split the two concepts across the client, the gRPC helper, and the protocol definition so retry detection no longer corrupted the ride association. Deduplication had been working before the change, because the service fell back to the reference field when no key was supplied; what it cost was every downstream reader of that field.</p>
+<p>The contract used one field for both the ride reference and the retry key. A tip introduced a second monetary operation for the same ride, so prefixed tip identifiers began leaking into code that expected a real ride ID. I added a dedicated idempotency key across the client, gRPC helper, and protocol definition. The old fallback still deduplicated requests, but it corrupted the field's business meaning.</p>
 <h3>A completion check passed on zero payments</h3>
 <p>While reading the whole path after the wallet fix, I found a completion check that dated back to the original implementation. Kotlin's <code>all</code> follows the logical rule of vacuous truth: it returns true for an empty collection. In a payment-completion check, that mathematically valid behavior was an invalid business result, because zero successful payments could be treated as fully paid and the flow went on to credit the driver. An emptiness guard now sits in front of that condition.</p>
 <h2>4. Trade-offs I accepted</h2>
@@ -83,11 +83,11 @@ CREATE UNIQUE INDEX ON tip_log (ride_id);</code></pre>
 <li>Before release, checked each region's payment methods end to end: a tip was actually charged, its transaction was readable an hour later, and the card-gateway paths produced correct transaction data.</li>
 <li>Release verification included real-card testing against the live gateway.</li>
 <li>Covered ownership of an explicitly selected payment method with tests: a rider can tip from an account they own, and cannot from one belonging to another rider or another corporate account.</li>
-<li>Traced reported failures against payment records rather than the app's display state, which is what separated a real failure from a misattributed one.</li>
+<li>Compared reported failures with payment records rather than the app's display state; this exposed the misattribution.</li>
 </ul>
 <p>The database constraint prevents two successful tip records for one ride, but it does not by itself make every external gateway call exactly once. Callback loss still requires status lookup or reconciliation, and an idempotency key is only as strong as the boundary that enforces it.</p>
 <h2>7. Result</h2>
-<p>Four payment methods handle tips across two regions. Measured after the release, the flow has processed about 56,000 tips. That figure describes the volume carried by the resulting path, not individual productivity. The code every method shares also came out stronger: an explicit idempotency key in the payment contract, a completion check that no longer passes on empty results, and a wallet path that only reports money it actually moved.</p>
+<p>Since release, the four methods have processed about 56,000 tips across two regions. This is path volume, not a measure of individual output. The shared path now uses a separate idempotency key, rejects empty completion results, and records wallet tips only after funds move.</p>
 <p class="note">Payment-provider names and internal identifiers are omitted.</p>
 <p class="note"><a href="../case-studies.html">← All selected work</a></p>
 </main>

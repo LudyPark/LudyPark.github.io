@@ -6,7 +6,7 @@
 <meta name="description" content="Case study: tracing an S3 API-cost spike to abandoned scheduled queries.">
 <title>Finding the workload behind an S3 API-cost spike — Jaeeun Park</title>
 <link rel="icon" href="../favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="../notes.css?v=20261005"></head>
+<link rel="stylesheet" href="../notes.css?v=20261010"></head>
 <body>
 <div class="wrap">
 <nav class="site-nav" aria-label="Site navigation"><a class="brand" href="../index.html">Jaeeun Park</a>
@@ -15,7 +15,7 @@
 <main>
 <p class="eyebrow">AWS · CloudTrail · Athena</p>
 <h1>Finding the workload behind an S3 API-cost spike</h1>
-<p class="lede">S3 API cost reached $138 per day. Cost Explorer showed which S3 API category was expensive, but not which workload generated the calls, and CloudTrail principal attribution was misleading because Athena could operate through delegated Lake Formation permissions. The investigation therefore became an attribution problem rather than a storage-optimization problem.</p>
+<p class="lede">Daily S3 API cost reached $138. Cost Explorer identified the request category but not the caller, and CloudTrail principals pointed to a Lake Formation service role instead of the Athena workload behind it. I re-attributed the requests by user agent and execution window before changing any storage configuration.</p>
 <p class="meta">Scope: cloud-cost investigation · My role: CloudTrail caller attribution</p>
 <h2>1. $138 a day in S3 API calls</h2>
 <p>From one day's CloudTrail record, about 168 million events, I grouped activity by event type and identified roughly 2.08 million <code>ListObjects</code> calls in the data-lake bucket. This was request-count billing, not scan-volume billing; List-class requests cost about twelve times Get-class requests under the historical pricing used in this investigation. Changing data format to reduce Athena scan cost would have addressed a different bill.</p>
@@ -28,7 +28,7 @@
 <h2>5. The actual source</h2>
 <p>I matched <code>StartQueryExecution</code> timestamps and query execution IDs to the windows of <code>ListObjects</code> activity. Five scheduled Redash queries were producing 70,000–120,000 calls per hour. Their predicate was:</p>
 <pre><code>WHERE '2022-07-19' &lt;= dt</code></pre>
-<p>The predicate was written against the partition column but behaved like a broad historical range on every run rather than an incremental window, so the queries repeatedly enumerated a large S3 prefix. Before removing the five schedules, I confirmed that the target table had no active consumer, verified that the query-author account was inactive, and agreed on the removal with the operations team. This separated technical attribution from the authorization to disable a production workload.</p>
+<p>The predicate was written against the partition column but behaved like a broad historical range on every run rather than an incremental window, so the queries repeatedly enumerated a large S3 prefix. I removed the schedules only after the operations team confirmed that the table had no active consumer and the query-author account was inactive.</p>
 <div class="diagram">
 <ol class="flow">
 <li>S3 API cost category</li>
@@ -50,13 +50,13 @@
 <ul class="checklist">
 <li>Checked request attribution by both principal and user agent; the disagreement exposed the delegated-permission attribution trap.</li>
 <li>Matched scheduled query executions to the relevant <code>ListObjects</code> windows.</li>
-<li>Observed the cost across a complete enough billing interval rather than crediting a short-lived change.</li>
+<li>Waited through the 24–48-hour billing aggregation lag before comparing cost.</li>
 <li>Confirmed that the target table had no active consumer before disabling schedules.</li>
 </ul>
 <h2>7. Next time</h2>
 <p>Removing the five jobs addressed the immediate cost, but the structural issue was schedules with no owner. The next controls would be workgroup scan limits and an owner field for scheduled queries.</p>
 <h2>8. Result</h2>
-<p>S3 API cost fell from $138 per day to $6 per day: a 96% reduction within that cost category. The figure refers to S3 API cost, not total AWS spend or Athena scan cost. What made the removal safe was knowing exactly which workload was making the calls, confirmed over a full billing window rather than an immediate before-and-after point. Workgroup scan limits and an owner field for scheduled queries are proposed preventive controls rather than part of the completed fix.</p>
+<p>After the five schedules were removed and the billing lag elapsed, S3 API cost fell from $138 per day to $6 per day, a 96% reduction within that category. This figure does not include total AWS spend or Athena scan cost. Workgroup scan limits and query ownership were recommendations, not part of the completed fix.</p>
 <p class="note">All figures in this note are from the investigation record at the time; the original CloudTrail logs have expired. Product names are shown, while company and account identifiers are omitted.</p>
 <p class="note"><a href="../case-studies.html">← All selected work</a></p>
 </main>
